@@ -39,3 +39,16 @@ Dev 3 Alexis : State Machine. Gérer les booléens : isAttacking, isHurt, isBloc
 Dev/Artiste 4 Maxime : Feedback Visuel (Placeholder). Son but est de faire parler les carrés : ajouter des petits rectangles de couleurs pour les barres de vie, faire flasher les persos, et afficher la hitbox de debug.
 
 Dev/Artiste 5 Kenzo : Equilibrage Data. Il ne code pas forcément de gros systèmes, mais il règle toutes les valeurs : puissance de la gravité, force des coups, vitesse de marche, durée du stun. C'est lui qui rend le jeu "jouable".
+
+
+
+
+
+
+Todo : remettre la mécanique de jeu sur le temps en fonction des grosses attaques (obligatoire)
+Todo : toucher la hitbox des coups qui est un peut trop grosse a mon gout (obligatoire)
+Todo : bien clip les hitbox des perso a leur pieds (obligatoire)
+Todo : remettre les particules de sangs (obligatoire)
+Todo : mettre un gros coups de dev a la main car full ia sur le sprite sheet pour tester, maintenant que fonctionnel : comprendre, réapproprier, et redev a la mano (obligatoire)
+
+Todo : essayer de coder le fait qu'on puisse jouer a la manette (optionnel)
