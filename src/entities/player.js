@@ -29,24 +29,30 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   update(keys, opponent) {
-    if (
-      this.state === statePlayer.attack ||
-      this.state === statePlayer.hitstun ||
-      this.state === statePlayer.dead
-    )
+    if (this.state === statePlayer.hitstun || this.state === statePlayer.dead) {
       return;
+    }
 
-    this.setVelocityX(0);
+    const isGrounded = this.body.touching.down;
+
+    if (this.state !== statePlayer.attack) {
+      this.setVelocityX(0);
+    }
+
     this.setScale(1, 1);
     this.body.setSize(this.width, this.height);
 
-    const walkSpeed = 300;
-    const walkBackSpeed = 200;
+    if (this.state === statePlayer.attack) {
+      return;
+    }
 
     if (Phaser.Input.Keyboard.JustDown(keys.attack)) {
       this.executeAttack();
       return;
     }
+
+    const walkSpeed = 300;
+    const walkBackSpeed = 200;
 
     if (keys.left.isDown) {
       if (this.x < opponent.x) {
@@ -64,14 +70,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.setVelocityX(walkSpeed);
         this.state = statePlayer.walk;
       }
-    } else if (keys.down.isDown) {
+    } else if (keys.down.isDown && isGrounded) {
       this.setScale(1, 0.5);
       this.body.setSize(this.width, this.height / 2);
     } else {
       this.state = statePlayer.idle;
     }
 
-    if (keys.up.isDown && this.body.touching.down) {
+    if (keys.up.isDown && isGrounded) {
       this.setVelocityY(-550);
     }
   }
@@ -79,7 +85,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   executeAttack() {
     this.state = statePlayer.attack;
     this.setVelocityX(0);
-
     this.setTint(0xffff00);
 
     const hitboxX = this.x + 40 * this.direction;
@@ -104,7 +109,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           enemy.state !== statePlayer.hitstun &&
           enemy.state !== statePlayer.dead
         ) {
-          enemy.takeDamage(5, this.x);
+          enemy.takeDamage(10, this.x);
         }
       });
     }
