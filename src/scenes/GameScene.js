@@ -10,7 +10,6 @@ export default class GameScene extends Phaser.Scene {
     this.needsWins = 2;
     this.isPaused = true;
     this.gameOver = false;
-    this.timerEvent = null;
   }
 
   preload() {
@@ -24,8 +23,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   create() {
-    const width = this.sys.game.config.width;
-    const height = this.sys.game.config.height;
+    const { width, height } = this.scale;
 
     this.add.rectangle(width / 2, height / 2, width, height, 0xf7d29a);
     this.add.circle(width / 2, height * 0.4, 150, 0xff4d4d);
@@ -82,31 +80,71 @@ export default class GameScene extends Phaser.Scene {
       attack: Phaser.Input.Keyboard.KeyCodes.ENTER,
     });
 
+    this.createHealthBars(width, height);
+
     this.timerText = this.add
-      .text(width / 2, 60, "99", {
-        fontSize: "64px",
+      .text(width / 2, 70, "99", {
+        fontSize: "60px",
         fill: "#fff",
         fontStyle: "bold",
+        stroke: "#000",
+        strokeThickness: 8,
       })
       .setOrigin(0.5)
-      .setVisible(false);
-    this.healthBar1 = this.add
-      .rectangle(width * 0.35, 60, 300, 30, 0xffff00)
-      .setOrigin(1, 0.5)
-      .setVisible(false);
-    this.healthBar2 = this.add
-      .rectangle(width * 0.65, 60, 300, 30, 0xffff00)
-      .setOrigin(0, 0.5)
       .setVisible(false);
 
     this.showMenu();
   }
 
+  createHealthBars(width, height) {
+    const barWidth = 400;
+    const barHeight = 40;
+    const y = 70;
+
+    this.add
+      .rectangle(width * 0.45, y, barWidth + 10, barHeight + 10, 0x000000)
+      .setOrigin(1, 0.5);
+    this.add
+      .rectangle(width * 0.45 - 5, y, barWidth, barHeight, 0x333333)
+      .setOrigin(1, 0.5);
+    this.healthBar1 = this.add
+      .rectangle(width * 0.45 - 5, y, barWidth, barHeight, 0xffff00)
+      .setOrigin(1, 0.5)
+      .setVisible(false);
+    this.p1Name = this.add
+      .text(width * 0.45 - barWidth, y - 40, "SAMURAI I", {
+        fontSize: "24px",
+        fontStyle: "bold",
+        fill: "#000",
+      })
+      .setOrigin(0, 0.5)
+      .setVisible(false);
+
+    this.add
+      .rectangle(width * 0.55, y, barWidth + 10, barHeight + 10, 0x000000)
+      .setOrigin(0, 0.5);
+    this.add
+      .rectangle(width * 0.55 + 5, y, barWidth, barHeight, 0x333333)
+      .setOrigin(0, 0.5);
+    this.healthBar2 = this.add
+      .rectangle(width * 0.55 + 5, y, barWidth, barHeight, 0xffff00)
+      .setOrigin(0, 0.5)
+      .setVisible(false);
+    this.p2Name = this.add
+      .text(width * 0.55 + barWidth, y - 40, "SAMURAI II", {
+        fontSize: "24px",
+        fontStyle: "bold",
+        fill: "#000",
+      })
+      .setOrigin(1, 0.5)
+      .setVisible(false);
+  }
+
   showMenu() {
     const { width, height } = this.scale;
     let txt = this.add
-      .text(width / 2, height / 2 - 100, "SAMURAI SHOWDOWN", {
-        fontSize: "50px",
+      .text(width / 2, height / 2 - 100, "武士道 - BUSHIDO", {
+        fontSize: "60px",
         fontStyle: "bold",
         fill: "#000",
       })
@@ -137,6 +175,8 @@ export default class GameScene extends Phaser.Scene {
     b5.destroy();
     this.healthBar1.setVisible(true);
     this.healthBar2.setVisible(true);
+    this.p1Name.setVisible(true);
+    this.p2Name.setVisible(true);
     this.timerText.setVisible(true);
     this.startNewRound();
   }
@@ -156,18 +196,21 @@ export default class GameScene extends Phaser.Scene {
 
     let introText = this.add
       .text(this.scale.width / 2, this.scale.height / 2, "", {
-        fontSize: "80px",
+        fontSize: "100px",
         fontStyle: "bold",
         fill: "#000",
+        stroke: "#fff",
+        strokeThickness: 10,
       })
       .setOrigin(0.5);
-    let steps = ["3", "2", "1", "FIGHT !"];
+
+    let steps = ["3", "2", "1", "いざ尋常に... 勝負 !"];
     steps.forEach((val, i) => {
       this.time.delayedCall(i * 1000, () => {
         introText.setText(val);
-        if (val === "FIGHT !") {
+        if (i === 3) {
           this.isPaused = false;
-          this.time.delayedCall(500, () => introText.destroy());
+          this.time.delayedCall(800, () => introText.destroy());
           this.startTimer();
         }
       });
@@ -196,9 +239,19 @@ export default class GameScene extends Phaser.Scene {
     this.player2.update(this.keysP2, this.player1);
     this.player1.updateFacing(this.player2);
     this.player2.updateFacing(this.player1);
-    this.healthBar1.width = (this.player1.hp / gameConfig.maxHp) * 300;
-    this.healthBar2.width = (this.player2.hp / gameConfig.maxHp) * 300;
+
+    this.updateHealthBar(this.healthBar1, this.player1.hp);
+    this.updateHealthBar(this.healthBar2, this.player2.hp);
+
     if (this.player1.hp <= 0 || this.player2.hp <= 0) this.checkWinner();
+  }
+
+  updateHealthBar(bar, hp) {
+    const percentage = hp / gameConfig.maxHp;
+    bar.width = percentage * 400;
+    if (percentage < 0.25) bar.setFillStyle(0xff0000);
+    else if (percentage < 0.5) bar.setFillStyle(0xffa500);
+    else bar.setFillStyle(0xffff00);
   }
 
   checkWinner() {
@@ -221,10 +274,11 @@ export default class GameScene extends Phaser.Scene {
 
   displayRoundVictory(winner) {
     let roundTxt = this.add
-      .text(this.scale.width / 2, 200, `ROUND POUR ${winner}`, {
-        fontSize: "40px",
+      .text(this.scale.width / 2, 250, `勝者: ${winner}`, {
+        fontSize: "60px",
+        fill: "#fff",
         backgroundColor: "#000",
-        padding: 15,
+        padding: 20,
       })
       .setOrigin(0.5);
     this.time.delayedCall(2000, () => {
@@ -235,15 +289,15 @@ export default class GameScene extends Phaser.Scene {
 
   displayFinalVictory(winner) {
     const { width, height } = this.scale;
-    this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.8);
+    this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.85);
     this.add
-      .text(width / 2, height / 2 - 50, `${winner} GAGNE LE MATCH !`, {
-        fontSize: "60px",
-        fill: "#0f0",
+      .text(width / 2, height / 2 - 50, `${winner} 全勝 !`, {
+        fontSize: "80px",
+        fill: "#ff0",
       })
       .setOrigin(0.5);
     this.add
-      .text(width / 2, height / 2 + 50, "APPUYEZ SUR [R] POUR RECOMMENCER", {
+      .text(width / 2, height / 2 + 80, "PRESS [R] TO REVENGE", {
         fontSize: "24px",
         fill: "#fff",
       })
