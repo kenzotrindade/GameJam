@@ -16,9 +16,21 @@ export default class GameScene extends Phaser.Scene {
     graphics.generateTexture("square", 32, 32);
     graphics.destroy();
 
+    const width = this.sys.game.config.width;
+    const height = this.sys.game.config.height;
+
     const platforms = this.physics.add.staticGroup();
-    const ground = this.add.rectangle(400, 580, 800, 40, 0x666666);
+
+    const ground = this.add.rectangle(
+      width / 2,
+      height - 20,
+      width,
+      40,
+      0x666666
+    );
+
     this.physics.add.existing(ground, true);
+    ground.body.setSize(width, 40);
     platforms.add(ground);
 
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -35,6 +47,11 @@ export default class GameScene extends Phaser.Scene {
     this.physics.add.collider(this.player1, platforms);
     this.physics.add.collider(this.player2, platforms);
     this.physics.add.collider(this.player1, this.player2);
+
+    this.physics.world.setBounds(0, 0, width, height);
+
+    this.player1.setCollideWorldBounds(true);
+    this.player2.setCollideWorldBounds(true);
 
     this.timeLeft = 99;
     this.timerText = this.add
@@ -62,7 +79,7 @@ export default class GameScene extends Phaser.Scene {
     });
 
     this.p1Surrender = this.add
-      .text(80, 580, "P1 ABANDON", {
+      .text(80, 80, "P1 ABANDON", {
         fontSize: "18px",
         fill: "#fff",
         backgroundColor: "#ff0000",
@@ -76,7 +93,7 @@ export default class GameScene extends Phaser.Scene {
       });
 
     this.p2Surrender = this.add
-      .text(780, 580, "P2 ABANDON", {
+      .text(300, 80, "P2 ABANDON", {
         fontSize: "18px",
         fill: "#fff",
         backgroundColor: "#ff0000",
