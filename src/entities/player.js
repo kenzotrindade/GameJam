@@ -89,7 +89,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   executeAttack() {
     this.state = statePlayer.attack;
     this.setVelocityX(0);
-    this.setTint(0xffff00);
 
     const hitboxX = this.x + 40 * this.direction;
     const hitboxY = this.y - this.height / 2;
@@ -97,8 +96,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const hitbox = this.scene.add.rectangle(
       hitboxX,
       hitboxY,
-      40,
-      40,
+      100,
+      100,
       0xffffff,
       0
     );
@@ -126,7 +125,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.state !== statePlayer.dead
       ) {
         this.state = statePlayer.idle;
-        this.setTint(this.baseColor);
       }
     });
   }
