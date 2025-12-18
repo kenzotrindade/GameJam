@@ -19,6 +19,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     this.setOrigin(0.5, 1);
     this.setCollideWorldBounds(true);
+    this.setScale(4);
+
     this.baseColor = color;
     this.setTint(this.baseColor);
 
@@ -36,13 +38,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       return;
 
     this.setVelocityX(0);
-    this.setScale(1, 1);
+    this.setScale(4, 4);
     this.body.setSize(this.width, this.height);
+    this.body.setOffset(0, 0);
 
     const walkSpeed = 300;
     const walkBackSpeed = 200;
 
-    // --- LOGIQUE D'ATTAQUE ---
     if (Phaser.Input.Keyboard.JustDown(keys.attack)) {
       this.executeAttack(opponent);
       return;
@@ -65,8 +67,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.state = statePlayer.walk;
       }
     } else if (keys.down.isDown) {
-      this.setScale(1, 0.5);
+      this.setScale(4, 3.5);
       this.body.setSize(this.width, this.height / 2);
+      this.body.setOffset(0, this.height / 2);
     } else {
       this.state = statePlayer.idle;
     }
@@ -81,14 +84,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setVelocityX(0);
     this.setTint(0xffffff);
 
-    const range = 60;
+    const range = 150;
     const dist = Phaser.Math.Distance.Between(
       this.x,
       this.y,
       opponent.x,
       opponent.y
     );
-
     const isFacingOpponent =
       (this.direction === 1 && this.x < opponent.x) ||
       (this.direction === -1 && this.x > opponent.x);
@@ -107,10 +109,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   takeDamage(amount, attackerX) {
     if (this.state === statePlayer.dead) return;
-
-    if (this.state === statePlayer.block) {
-      amount = Math.floor(amount * 0.2);
-    }
+    if (this.state === statePlayer.block) amount = Math.floor(amount * 0.2);
 
     this.hp -= amount;
 
@@ -140,7 +139,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   updateFacing(opponent) {
     if (this.state === statePlayer.hitstun || this.state === statePlayer.dead)
       return;
-
     if (this.x < opponent.x) {
       this.setFlipX(false);
       this.direction = 1;
