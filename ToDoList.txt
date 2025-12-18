@@ -1,2 +1,41 @@
--> Initialiser Phaser
--> Jeu de combat en 2D, ressemblant à StreetFighter dans le thème japonais ( à voir pour les katanas  par la suite + retrouver une mécanique propre au jeu )
+🧱 Roadmap Prototype "Greybox" (Objectif : Ce soir 22h)
+1. Logique des Corps (Physique & Position)
+Axe de dev : Gérer la friction au sol pour que les carrés s'arrêtent net (feeling arcade).
+
+Face-à-Face : Logique automatique pour que le Carré A regarde toujours le Carré B. Sans ça, impossible de gérer la direction des coups.
+
+Solidité : Empêcher les carrés de se passer à travers (Body Collision).
+
+2. Logique du "Combat System" (Le cœur du projet)
+Startup / Active / Recovery : * Startup : Petit délai avant que le coup ne sorte.
+
+Active : Création de la Hitbox de dégâts.
+
+Recovery : Délai où on ne peut plus rien faire (punition si on rate).
+
+Overlap Logic : Détecter si la hitbox du coup touche le corps adverse.
+
+Knockback (Recul) : Si ça touche, le receveur est poussé en arrière et vers le haut.
+
+3. Logique de Défense & États
+State Locking (Verrouillage) : Si le carré est en train de taper, il ne peut pas bouger. S'il est en train de prendre un coup (Hitstun), il ne peut ni bouger ni taper.
+
+Garde Passive : Si l'input "Bas" est maintenu, on change une variable isBlocking. Lors d'un impact, si cette variable est vraie, on réduit le recul et on annule les dégâts.
+
+4. Feedback de Données (UI Primitive)
+Variable HP : Une simple valeur qui descend.
+
+Feedback Visuel Flash : Le carré devient blanc ou rouge pendant 0.1s quand il prend un coup (indispensable pour comprendre ce qu'il se passe sans graphisme).
+
+Condition de fin : Si HP = 0, on fige les contrôles et on affiche un texte "P1 GAGNE".
+
+🛠 Répartition des 5 tâches (Mode Prototype)
+Toi (Lead) Enzo : Système de Hitbox & Collisions. Tu gères le moment où le coup part et ce qu'il se passe quand il touche (dégâts + détection de la garde).
+
+Dev 2 Antoine : Mouvement & Contrôles. Focus sur le "feeling". Sauter, marcher, et surtout le Dash (déplacement rapide) qui est vital pour un prototype de combat.
+
+Dev 3 Alexis : State Machine. Gérer les booléens : isAttacking, isHurt, isBlocking, isGrounded. C'est lui qui verrouille les actions pour éviter que les joueurs fassent n'importe quoi.
+
+Dev/Artiste 4 Maxime : Feedback Visuel (Placeholder). Son but est de faire parler les carrés : ajouter des petits rectangles de couleurs pour les barres de vie, faire flasher les persos, et afficher la hitbox de debug.
+
+Dev/Artiste 5 Kenzo : Equilibrage Data. Il ne code pas forcément de gros systèmes, mais il règle toutes les valeurs : puissance de la gravité, force des coups, vitesse de marche, durée du stun. C'est lui qui rend le jeu "jouable".
