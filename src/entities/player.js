@@ -10,6 +10,27 @@ const statePlayer = Object.freeze({
   dead: 5,
 });
 
+const dataAttack = {
+  low: {
+    damage: 5,
+    range: 120,
+    hitstuntDuration: 200,
+    color: 0xffff00,
+  },
+  mid: {
+    damage: 10,
+    range: 140,
+    hitstuntDuration: 400,
+    color: 0xffa500,
+  },
+  heavy: {
+    damage: 15,
+    range: 160,
+    hitstuntDuration: 800,
+    color: 0xff0000,
+  },
+};
+
 export class Player extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y, texture, color) {
     super(scene, x, y, texture);
@@ -39,6 +60,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
+    if (this.state === statePlayer.attack) {
+      return;
+    }
+
     const isGrounded = this.body.touching.down;
     this.setVelocityX(0);
     this.setScale(4, 4);
@@ -47,8 +72,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     if (this.state === statePlayer.attack) return;
 
-    if (Phaser.Input.Keyboard.JustDown(keys.attack)) {
-      this.executeAttack();
+    // if (Phaser.Input.Keyboard.JustDown(keys.attack)) {
+    //   this.executeAttack();
+    //   return;
+    // }
+
+    if (Phaser.Input.Keyboard.JustDown(keys.lowattack)) {
+      this.executeAttack("low");
+      return;
+    } else if (Phaser.Input.Keyboard.JustDown(keys.midattack)) {
+      this.executeAttack("mid");
+      return;
+    } else if (Phaser.Input.Keyboard.JustDown(keys.heavyattack)) {
+      this.executeAttack("heavy");
       return;
     }
 
@@ -84,15 +120,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
-  executeAttack() {
+  executeAttack(type) {
+    const config = dataAttack[type];
     this.state = statePlayer.attack;
     this.setVelocityX(0);
-    this.setTint(0xffff00);
+    this.setTint(config.color);
 
-    const boxWidth = 100;
     const playerHalfWidth = this.displayWidth / 2;
-
-    const hitboxHalfWidth = boxWidth / 2;
+    const hitboxHalfWidth = config.range / 2;
     const offset = playerHalfWidth + hitboxHalfWidth;
     const hitboxX = this.x + offset * this.direction;
     const hitboxY = this.y - this.height / 2;
@@ -100,27 +135,35 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const hitbox = this.scene.add.rectangle(
       hitboxX,
       hitboxY,
-      boxWidth,
+      config.range,
       100,
       0xffffff,
       0
     );
+
     this.scene.physics.add.existing(hitbox);
     const enemy =
       this === this.scene.player1 ? this.scene.player2 : this.scene.player1;
+
     if (enemy) {
       this.scene.physics.overlap(hitbox, enemy, () => {
         if (
           enemy.state !== statePlayer.hitstun &&
           enemy.state !== statePlayer.dead
         ) {
-          enemy.takeDamage(10, this.x);
+          enemy.takeDamage(config.damage, this.x);
         }
       });
     }
-    this.scene.time.delayedCall(300, () => {
+    this.scene.time.delayedCall(config.hitstuntDuration, () => {
       hitbox.destroy();
-      if (this.state !== statePlayer.dead) this.state = statePlayer.idle;
+      if (
+        this.state !== statePlayer.dead &&
+        this.state !== statePlayer.hitstun
+      ) {
+        this.state = statePlayer.idle;
+        this.setTint(this.baseColor);
+      }
     });
   }
 
