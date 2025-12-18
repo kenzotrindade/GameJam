@@ -45,11 +45,9 @@ Dev/Artiste 5 Kenzo : Equilibrage Data. Il ne code pas forcément de gros systè
 
 
 
-Todo : remettre la mécanique de jeu sur le temps en fonction des grosses attaques (obligatoire)
-Todo : toucher la hitbox des coups qui est un peut trop grosse a mon gout (obligatoire) + Todo : changer la hitbox des coups urgent c'est laggy quand on est collé y'a pas le coups car il se fait a distance (obligatoire)
-Todo : bien clip les hitbox des perso a leur pieds (obligatoire)
-Todo : remettre les particules de sangs (obligatoire)
 Todo : mettre un gros coups de dev a la main car full ia sur le sprite sheet pour tester, maintenant que fonctionnel : comprendre, réapproprier, et redev a la mano (obligatoire)
+Todo : refaire complètement le front en Jap (obligatoire)
 
-Todo : quand notre coups est bloqué on doit avoir un Knockback de x1.5 de ce qu'on devait mettre et le mec qui block lui doit prendre que x0.5 de Knockback
 Todo : essayer de coder le fait qu'on puisse jouer a la manette (optionnel)
+Todo : mettre des songs (optionnel)
+Todo : des easter egg a street fighter (optionnel)
