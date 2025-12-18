@@ -23,6 +23,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.state === "HURT" || this.state === "DEAD") return;
 
     this.setVelocityX(0);
+    this.setScale(1, 1);
+    this.body.setSize(this.width, this.height);
 
     const speed = 160;
 
@@ -32,6 +34,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     } else if (keys.right.isDown) {
       this.setVelocityX(speed);
       if (this.state !== "ATTACK") this.state = "WALK";
+    } else if (keys.down.isDown) {
+      this.setScale(1, 0.5);
+      this.body.setSize(this.width, this.height);
     } else {
       if (this.state !== "ATTACK") this.state = "IDLE";
     }

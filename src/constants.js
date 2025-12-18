@@ -5,6 +5,7 @@ export const gameConfig = {
 
   // Mouvements basiques
   walkSpeed: 300,
+  walkBackSpeed: 200,
   dashVelocity: 1200,
   dashDuration: 200,
   jumpForce: -700,

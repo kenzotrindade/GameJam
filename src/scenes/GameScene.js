@@ -47,6 +47,7 @@ export default class GameScene extends Phaser.Scene {
     this.physics.add.collider(this.player1, platforms);
     this.physics.add.collider(this.player2, platforms);
     this.physics.add.collider(this.player1, this.player2);
+    this.physics.add.collider(this.player, this.ground);
 
     this.physics.world.setBounds(0, 0, width, height);
 
