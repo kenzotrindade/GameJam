@@ -22,7 +22,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setScale(4);
 
     this.baseColor = color;
-    this.setTint(this.baseColor);
 
     this.hp = gameConfig.maxHp;
     this.state = statePlayer.idle;
@@ -42,16 +41,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.setVelocityX(0);
     }
 
-    this.setVelocityX(0);
     this.setScale(4, 4);
     this.body.setSize(this.width, this.height);
     this.body.setOffset(0, 0);
 
-    const walkSpeed = 300;
-    const walkBackSpeed = 200;
-
-    if (Phaser.Input.Keyboard.JustDown(keys.attack)) {
-      this.executeAttack(opponent);
+    if (this.state === statePlayer.attack) {
       return;
     }
 
@@ -97,16 +91,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setVelocityX(0);
     this.setTint(0xffff00);
 
-    const range = 150;
-    const dist = Phaser.Math.Distance.Between(
-      this.x,
-      this.y,
-      opponent.x,
-      opponent.y
+    const hitboxX = this.x + 40 * this.direction;
+    const hitboxY = this.y - this.height / 2;
+
+    const hitbox = this.scene.add.rectangle(
+      hitboxX,
+      hitboxY,
+      40,
+      40,
+      0xffffff,
+      0
     );
-    const isFacingOpponent =
-      (this.direction === 1 && this.x < opponent.x) ||
-      (this.direction === -1 && this.x > opponent.x);
+    this.scene.physics.add.existing(hitbox);
+
+    const enemy =
+      this === this.scene.player1 ? this.scene.player2 : this.scene.player1;
 
     if (enemy) {
       this.scene.physics.overlap(hitbox, enemy, () => {
@@ -134,7 +133,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   takeDamage(amount, attackerX) {
     if (this.state === statePlayer.dead) return;
-    if (this.state === statePlayer.block) amount = Math.floor(amount * 0.2);
+
+    if (this.state === statePlayer.block) {
+      amount = Math.floor(amount * 0.2);
+      console.log("Bloqué !");
+    }
 
     this.hp -= amount;
 
@@ -142,12 +145,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.hp <= 0) {
       this.hp = 0;
       this.state = statePlayer.dead;
-      this.setTint(0x000000);
       return;
     }
 
     this.state = statePlayer.hitstun;
-    this.setTint(0xff0000);
 
     const knockbackDir = this.x < attackerX ? -1 : 1;
     this.setVelocityX(200 * knockbackDir);
@@ -156,7 +157,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.time.delayedCall(gameConfig.hitstuntDuration || 400, () => {
       if (this.state !== statePlayer.dead) {
         this.clearTint();
-        this.setTint(this.baseColor);
         this.state = statePlayer.idle;
       }
     });
