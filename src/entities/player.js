@@ -15,56 +15,87 @@ const dataAttack = {
     damage: 5,
     range: 120,
     hitstuntDuration: 400,
-    color: 0xffff00,
+    animSuffix: "_attack1", // Juste le suffixe !
   },
   mid: {
     damage: 10,
     range: 140,
     hitstuntDuration: 600,
-    color: 0xffa500,
+    animSuffix: "_attack2",
   },
   heavy: {
     damage: 15,
     range: 160,
     hitstuntDuration: 900,
-    color: 0xff0000,
+    animSuffix: "_attack2", // On recycle l'anim 2 pour le heavy
   },
 };
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
-  constructor(scene, x, y, texture, color) {
-    super(scene, x, y, texture);
+  constructor(scene, x, y, textureKey, color) {
+    // textureKey sera "samurai"
+    super(scene, x, y, textureKey + "_idle");
+
     scene.add.existing(this);
     scene.physics.add.existing(this);
+
+    this.textureKey = textureKey; // On sauvegarde "samurai" pour plus tard
+
     this.setOrigin(0.5, 1);
     this.setCollideWorldBounds(true);
-    this.setScale(5);
+
+    // --- SCALE & HITBOX (Sprites 200x200) ---
+    this.setScale(2.5);
+    this.body.setSize(70, 80);
+    this.body.setOffset(70, 75);
+
     this.baseColor = color;
+    if (color) {
+      this.setTint(color);
+    }
+
     this.hp = gameConfig.maxHp;
     this.state = statePlayer.idle;
     this.direction = x > scene.sys.game.config.width / 2 ? -1 : 1;
     this.setFlipX(this.direction === -1);
+
+    this.play(this.textureKey + "_idle");
+  }
+
+  // Petite méthode helper pour le restart
+  resetPosition(x, y) {
+    this.setPosition(x, y);
+    this.state = statePlayer.idle;
+    this.hp = gameConfig.maxHp;
+    this.setVelocity(0, 0);
     this.clearTint();
+    if (this.baseColor) this.setTint(this.baseColor);
+    this.play(this.textureKey + "_idle");
   }
 
   update(keys, opponent) {
-    if (this.state === statePlayer.dead) {
-      this.setVelocityX(0);
-      this.setTint(0x333333);
-      return;
-    }
-
-    if (this.state !== statePlayer.hitstun) {
-      this.clearTint();
-    } else {
-      return;
-    }
+    if (this.state === statePlayer.dead) return;
+    if (this.state === statePlayer.hitstun) return;
 
     const isGrounded = this.body.touching.down;
     this.setVelocityX(0);
-    this.setScale(5, 5);
-    this.body.setSize(this.width, this.height);
-    this.body.setOffset(0, 0);
+
+    // --- ANIMATIONS DYNAMIQUES ---
+    if (this.state !== statePlayer.attack) {
+      if (!isGrounded) {
+        if (this.body.velocity.y < 0) {
+          this.play(this.textureKey + "_jump", true);
+        } else {
+          this.play(this.textureKey + "_fall", true);
+        }
+      } else {
+        if (keys.left.isDown || keys.right.isDown) {
+          this.play(this.textureKey + "_run", true);
+        } else {
+          this.play(this.textureKey + "_idle", true);
+        }
+      }
+    }
 
     if (this.state === statePlayer.attack) return;
 
@@ -85,7 +116,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (keys.left.isDown) {
       if (this.x < opponent.x) {
         this.setVelocityX(-walkBackSpeed);
-        this.state = statePlayer.block;
+        this.state = statePlayer.block; // Faudrait une anim de block un jour !
       } else {
         this.setVelocityX(-walkSpeed);
         this.state = statePlayer.walk;
@@ -98,8 +129,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.setVelocityX(walkSpeed);
         this.state = statePlayer.walk;
       }
-    } else if (keys.down.isDown && isGrounded) {
-      this.setScale(5, 3.5);
     } else {
       this.state = statePlayer.idle;
     }
@@ -113,11 +142,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const config = dataAttack[type];
     this.state = statePlayer.attack;
     this.setVelocityX(0);
-    this.setTint(config.color);
+
+    // Construction du nom de l'anim : "samurai" + "_attack1"
+    this.play(this.textureKey + config.animSuffix);
 
     const playerHalfWidth = this.displayWidth / 2;
     const hitboxHalfWidth = config.range / 2;
-    const offset = playerHalfWidth + hitboxHalfWidth;
+    const offset = playerHalfWidth * 0.6 + hitboxHalfWidth;
+
     const hitboxX = this.x + offset * this.direction;
     const hitboxY = this.y - this.displayHeight / 2;
 
@@ -146,41 +178,53 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       });
     }
 
-    this.scene.time.delayedCall(config.hitstuntDuration, () => {
+    this.once("animationcomplete", () => {
       hitbox.destroy();
       if (
         this.state !== statePlayer.dead &&
         this.state !== statePlayer.hitstun
       ) {
         this.state = statePlayer.idle;
-        this.clearTint();
+        this.play(this.textureKey + "_idle", true);
       }
+    });
+
+    this.scene.time.delayedCall(config.hitstuntDuration, () => {
+      if (hitbox.active) hitbox.destroy();
     });
   }
 
   takeDamage(amount, attackerX) {
-    if (this.scene.hitParticles) {
-      this.scene.hitParticles.explode(20, this.x, this.y - 60);
-    }
     if (this.state === statePlayer.dead) return;
     if (this.state === statePlayer.block) amount = Math.floor(amount * 0.2);
+
     this.hp -= amount;
+
+    if (this.scene.hitParticles) {
+      this.scene.hitParticles.explode(10, this.x, this.y - 50);
+    }
+
     if (this.hp <= 0) {
       this.hp = 0;
       this.state = statePlayer.dead;
-      this.setTint(0x333333);
       this.setVelocityX(0);
+      this.play(this.textureKey + "_death");
       return;
     }
+
     this.state = statePlayer.hitstun;
-    this.setTint(0xff8888);
+    this.play(this.textureKey + "_hit");
+
     const knockbackDir = this.x < attackerX ? -1 : 1;
     this.setVelocityX(200 * knockbackDir);
     this.setVelocityY(-200);
-    this.scene.time.delayedCall(500, () => {
+
+    this.once("animationcomplete", () => {
       if (this.state !== statePlayer.dead) {
         this.state = statePlayer.idle;
+        this.play(this.textureKey + "_idle", true);
         this.clearTint();
+        if (this.baseColor) this.setTint(this.baseColor);
       }
     });
   }
