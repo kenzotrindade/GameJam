@@ -14,20 +14,20 @@ const statePlayer = Object.freeze({
 const dataAttack = {
   low: {
     damage: 5,
-    range: 120,
+    range: 240,
     // Temps pendant lequel le joueur est bloqué (Cooldown)
     duration: 400,
     animSuffix: "_attack1",
   },
   mid: {
     damage: 10,
-    range: 140,
+    range: 280,
     duration: 600,
     animSuffix: "_attack2",
   },
   heavy: {
     damage: 15,
-    range: 160,
+    range: 320,
     // Grosse attaque = Gros temps de blocage (900ms)
     duration: 900,
     animSuffix: "_attack2",
@@ -162,20 +162,34 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // 1. On lance l'animation
     this.play(this.textureKey + config.animSuffix);
 
-    // 2. Hitbox
-    const playerHalfWidth = this.displayWidth / 2;
-    const hitboxHalfWidth = config.range / 2;
-    const offset = playerHalfWidth * 0.6 + hitboxHalfWidth;
+    // --- CORRECTION DU POSITIONNEMENT X ---
+
+    // A. On récupère la demi-largeur de la HITBOX DU CORPS (pas de l'image !)
+    // this.body.width est la largeur réelle physique dans le monde
+    const bodyHalfWidth = this.body.width / 2;
+
+    // B. On récupère la demi-largeur de l'ATTAQUE
+    const attackHalfWidth = config.range / 2;
+
+    // C. On additionne les deux pour que ça se touche parfaitement
+    // J'ajoute un tout petit overlap négatif (-10) pour être sûr que ça ne laisse pas de trou,
+    // mais tu peux mettre 0 si tu veux que ce soit pixel perfect.
+    const overlap = 0;
+    const offset = bodyHalfWidth + attackHalfWidth - overlap;
+
     const hitboxX = this.x + offset * this.direction;
-    const hitboxY = this.y - this.displayHeight / 2;
+
+    // --- CORRECTION DU POSITIONNEMENT Y ---
+    // On aligne la hauteur de l'attaque avec le centre du corps physique
+    const hitboxY = this.body.center.y; // Beaucoup plus fiable que this.y - height
 
     const hitbox = this.scene.add.rectangle(
       hitboxX,
       hitboxY,
       config.range,
-      100,
+      100, // Hauteur du coup
       0xffffff,
-      0
+      0 // Mets 0.5 ici pour VOIR le rectangle blanc et débugger !
     );
     this.scene.physics.add.existing(hitbox);
     hitbox.body.setAllowGravity(false);
@@ -194,29 +208,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       });
     }
 
-    // --- C'EST ICI QUE ÇA CHANGE ---
-
-    // A. Événement VISUEL : Quand l'animation du coup est finie...
+    // A. Événement VISUEL : Retour à l'Idle
     this.once("animationcomplete", () => {
-      // Si on est toujours vivant et pas stun...
       if (this.state === statePlayer.attack) {
-        // ... On se remet visuellement en position d'attente (Idle)
-        // CA ÉVITE L'EFFET LAGGY / STATUE
         this.play(this.textureKey + "_idle", true);
       }
     });
 
-    // B. Événement LOGIQUE : Quand le Cooldown est fini...
+    // B. Événement LOGIQUE : Fin du Cooldown
     this.scene.time.delayedCall(config.duration, () => {
       if (hitbox.active) hitbox.destroy();
 
-      // On rend le contrôle au joueur SEULEMENT maintenant
       if (
         this.state !== statePlayer.dead &&
         this.state !== statePlayer.hitstun
       ) {
         this.state = statePlayer.idle;
-        // On est sûr d'être en idle
         this.play(this.textureKey + "_idle", true);
       }
     });
