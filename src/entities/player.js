@@ -14,7 +14,7 @@ const statePlayer = Object.freeze({
 const dataAttack = {
   low: {
     damage: 5,
-    range: 120,
+    range: 150,
     // Temps pendant lequel le joueur est bloqué (Cooldown)
     duration: 400,
     animSuffix: "_attack1",
@@ -165,15 +165,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // 2. Hitbox
     const playerHalfWidth = this.displayWidth / 2;
     const hitboxHalfWidth = config.range / 2;
-    const offset = playerHalfWidth * 0.6 + hitboxHalfWidth;
+    const offset = playerHalfWidth * 0.3 + hitboxHalfWidth;
     const hitboxX = this.x + offset * this.direction;
     const hitboxY = this.y - this.displayHeight / 2;
 
     const hitbox = this.scene.add.rectangle(
       hitboxX,
       hitboxY,
-      config.range,
-      100,
+      config.range * 2,
+      50,
+      170,
       0xffffff,
       0
     );
