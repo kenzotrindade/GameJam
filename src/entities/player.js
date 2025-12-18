@@ -13,18 +13,16 @@ const statePlayer = Object.freeze({
 export class Player extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y, texture, color) {
     super(scene, x, y, texture);
-
     scene.add.existing(this);
     scene.physics.add.existing(this);
-
     this.setOrigin(0.5, 1);
     this.setCollideWorldBounds(true);
     this.setScale(4);
-
     this.baseColor = color;
     this.hp = gameConfig.maxHp;
     this.state = statePlayer.idle;
-    this.direction = 1;
+    this.direction = x > scene.sys.game.config.width / 2 ? -1 : 1;
+    this.setFlipX(this.direction === -1);
     this.clearTint();
   }
 
@@ -37,9 +35,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     if (this.state !== statePlayer.hitstun) {
       this.clearTint();
-    }
-
-    if (this.state === statePlayer.hitstun) {
+    } else {
       return;
     }
 
@@ -110,10 +106,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       0
     );
     this.scene.physics.add.existing(hitbox);
-
     const enemy =
       this === this.scene.player1 ? this.scene.player2 : this.scene.player1;
-
     if (enemy) {
       this.scene.physics.overlap(hitbox, enemy, () => {
         if (
@@ -124,24 +118,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
       });
     }
-
     this.scene.time.delayedCall(300, () => {
       hitbox.destroy();
-      if (this.state !== statePlayer.dead) {
-        this.state = statePlayer.idle;
-      }
+      if (this.state !== statePlayer.dead) this.state = statePlayer.idle;
     });
   }
 
   takeDamage(amount, attackerX) {
     if (this.state === statePlayer.dead) return;
-
-    if (this.state === statePlayer.block) {
-      amount = Math.floor(amount * 0.2);
-    }
-
+    if (this.state === statePlayer.block) amount = Math.floor(amount * 0.2);
     this.hp -= amount;
-
     if (this.hp <= 0) {
       this.hp = 0;
       this.state = statePlayer.dead;
@@ -149,14 +135,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.setVelocityX(0);
       return;
     }
-
     this.state = statePlayer.hitstun;
     this.setTint(0xff8888);
-
     const knockbackDir = this.x < attackerX ? -1 : 1;
     this.setVelocityX(200 * knockbackDir);
     this.setVelocityY(-200);
-
     this.scene.time.delayedCall(500, () => {
       if (this.state !== statePlayer.dead) {
         this.state = statePlayer.idle;
