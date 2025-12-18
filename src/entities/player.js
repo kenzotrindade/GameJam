@@ -14,19 +14,19 @@ const dataAttack = {
   low: {
     damage: 5,
     range: 120,
-    hitstuntDuration: 200,
+    hitstuntDuration: 400,
     color: 0xffff00,
   },
   mid: {
     damage: 10,
     range: 140,
-    hitstuntDuration: 400,
+    hitstuntDuration: 600,
     color: 0xffa500,
   },
   heavy: {
     damage: 15,
     range: 160,
-    hitstuntDuration: 800,
+    hitstuntDuration: 900,
     color: 0xff0000,
   },
 };
@@ -38,7 +38,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     scene.physics.add.existing(this);
     this.setOrigin(0.5, 1);
     this.setCollideWorldBounds(true);
-    this.setScale(4);
+    this.setScale(5);
     this.baseColor = color;
     this.hp = gameConfig.maxHp;
     this.state = statePlayer.idle;
@@ -60,22 +60,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
-    if (this.state === statePlayer.attack) {
-      return;
-    }
-
     const isGrounded = this.body.touching.down;
     this.setVelocityX(0);
-    this.setScale(4, 4);
+    this.setScale(5, 5);
     this.body.setSize(this.width, this.height);
     this.body.setOffset(0, 0);
 
     if (this.state === statePlayer.attack) return;
-
-    // if (Phaser.Input.Keyboard.JustDown(keys.attack)) {
-    //   this.executeAttack();
-    //   return;
-    // }
 
     if (Phaser.Input.Keyboard.JustDown(keys.lowattack)) {
       this.executeAttack("low");
@@ -108,15 +99,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.state = statePlayer.walk;
       }
     } else if (keys.down.isDown && isGrounded) {
-      this.setScale(4, 3.5);
-      this.body.setSize(this.width, this.height / 2);
-      this.body.setOffset(0, this.height / 2);
+      this.setScale(5, 3.5);
     } else {
       this.state = statePlayer.idle;
     }
 
     if (keys.up.isDown && isGrounded) {
-      this.setVelocityY(-550);
+      this.setVelocityY(-800);
     }
   }
 
@@ -130,7 +119,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const hitboxHalfWidth = config.range / 2;
     const offset = playerHalfWidth + hitboxHalfWidth;
     const hitboxX = this.x + offset * this.direction;
-    const hitboxY = this.y - this.height / 2;
+    const hitboxY = this.y - this.displayHeight / 2;
 
     const hitbox = this.scene.add.rectangle(
       hitboxX,
@@ -140,8 +129,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       0xffffff,
       0
     );
-
     this.scene.physics.add.existing(hitbox);
+    hitbox.body.setAllowGravity(false);
+
     const enemy =
       this === this.scene.player1 ? this.scene.player2 : this.scene.player1;
 
@@ -155,6 +145,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
       });
     }
+
     this.scene.time.delayedCall(config.hitstuntDuration, () => {
       hitbox.destroy();
       if (
@@ -162,12 +153,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.state !== statePlayer.hitstun
       ) {
         this.state = statePlayer.idle;
-        this.setTint(this.baseColor);
+        this.clearTint();
       }
     });
   }
 
   takeDamage(amount, attackerX) {
+    if (this.scene.hitParticles) {
+      this.scene.hitParticles.explode(20, this.x, this.y - 60);
+    }
     if (this.state === statePlayer.dead) return;
     if (this.state === statePlayer.block) amount = Math.floor(amount * 0.2);
     this.hp -= amount;

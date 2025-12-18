@@ -10,17 +10,54 @@ export default class GameScene extends Phaser.Scene {
     this.needsWins = 2;
     this.isPaused = true;
     this.gameOver = false;
-    this.timerEvent = null;
   }
 
   preload() {
     this.load.image("samurai_p1", "img/samourai.png");
     this.load.image("samurai_p2", "img/samourai2.png");
+    this.load.image("fond", "img/1125239.jpg");
+
+    const graphics = this.make.graphics({ x: 0, y: 0, add: false });
+    graphics.fillStyle(0xffb7c5, 1);
+    graphics.fillCircle(4, 4, 4);
+    graphics.generateTexture("petal", 8, 8);
+
+    const impactGraphics = this.make.graphics({ x: 0, y: 0, add: false });
+    impactGraphics.fillStyle(0xff0000, 1);
+    impactGraphics.fillRect(0, 0, 4, 4);
+    impactGraphics.generateTexture("hit_particle", 4, 4);
   }
 
   create() {
-    const width = this.sys.game.config.width;
-    const height = this.sys.game.config.height;
+    const { width, height } = this.scale;
+
+    this.add.image(width / 2, height / 2, "fond").setDisplaySize(width, height);
+
+    this.add.particles(0, 0, "petal", {
+      x: { min: 0, max: width },
+      y: -10,
+      lifespan: 6000,
+      speedY: { min: 40, max: 100 },
+      speedX: { min: -20, max: 50 },
+      scale: { start: 0.8, end: 0.4 },
+      rotate: { min: 0, max: 360 },
+      gravityY: 20,
+      frequency: 150,
+    });
+
+    this.hitParticles = this.add.particles(0, 0, "hit_particle", {
+      speed: { min: 50, max: 200 },
+      angle: { min: 0, max: 360 },
+      scale: { start: 1.5, end: 0 },
+      lifespan: 600,
+      gravityY: 500,
+      emitting: false,
+      emitZone: {
+        type: "random",
+        source: new Phaser.Geom.Rectangle(-25, -120, 50, 120),
+      },
+    });
+    this.hitParticles.setDepth(100);
 
     const platforms = this.physics.add.staticGroup();
     const ground = this.add.rectangle(
@@ -28,7 +65,7 @@ export default class GameScene extends Phaser.Scene {
       height - 20,
       width,
       40,
-      0x666666
+      0x222222
     );
     this.physics.add.existing(ground, true);
     platforms.add(ground);
@@ -66,88 +103,67 @@ export default class GameScene extends Phaser.Scene {
       heavyattack: Phaser.Input.Keyboard.KeyCodes.O,
     });
 
+    this.createHealthBars(width, height);
+
     this.timerText = this.add
-      .text(width / 2, 50, "99", {
-        fontSize: "64px",
+      .text(width / 2, 70, "99", {
+        fontSize: "60px",
         fill: "#fff",
         fontStyle: "bold",
+        stroke: "#000",
+        strokeThickness: 8,
       })
       .setOrigin(0.5)
       .setVisible(false);
 
+    this.showMenu();
+  }
+
+  createHealthBars(width, height) {
+    const barWidth = 300;
+    const barHeight = 30;
+    const y = 50;
+
     this.add
-      .rectangle(width * 0.3, 50, 305, 35, 0x000000, 0.5)
+      .rectangle(width * 0.3, y, barWidth + 5, barHeight + 5, 0x000000, 0.5)
       .setOrigin(1, 0.5);
     this.healthBar1 = this.add
-      .rectangle(width * 0.3, 50, 300, 30, 0xffff00)
+      .rectangle(width * 0.3, y, barWidth, barHeight, 0xffff00)
       .setOrigin(1, 0.5)
       .setVisible(false);
 
     this.add
-      .rectangle(width * 0.7, 50, 305, 35, 0x000000, 0.5)
+      .rectangle(width * 0.7, y, barWidth + 5, barHeight + 5, 0x000000, 0.5)
       .setOrigin(0, 0.5);
     this.healthBar2 = this.add
-      .rectangle(width * 0.7, 50, 300, 30, 0xffff00)
+      .rectangle(width * 0.7, y, barWidth, barHeight, 0xffff00)
       .setOrigin(0, 0.5)
       .setVisible(false);
-
-    this.p1Surrender = this.add
-      .text(width * 0.3 - 300, 80, "ABANDON [P1]", {
-        backgroundColor: "#900",
-        padding: 5,
-      })
-      .setInteractive({ useHandCursor: true })
-      .on("pointerdown", () => this.handleManualWin("P2"))
-      .setVisible(false);
-
-    this.p2Surrender = this.add
-      .text(width * 0.7 + 300, 80, "ABANDON [P2]", {
-        backgroundColor: "#900",
-        padding: 5,
-      })
-      .setOrigin(1, 0)
-      .setInteractive({ useHandCursor: true })
-      .on("pointerdown", () => this.handleManualWin("P1"))
-      .setVisible(false);
-
-    this.debugText = this.add.text(10, height - 30, "", {
-      fontSize: "14px",
-      fill: "#0f0",
-    });
-
-    this.showMenu();
   }
 
   showMenu() {
     const { width, height } = this.scale;
-    const centerX = width / 2;
-    const centerY = height / 2;
-
     let txt = this.add
-      .text(centerX, centerY - 100, "CHOISISSEZ LE FORMAT", {
-        fontSize: "42px",
+      .text(width / 2, height / 2 - 100, "武士道 - BUSHIDO", {
+        fontSize: "60px",
         fontStyle: "bold",
+        fill: "#000",
       })
       .setOrigin(0.5);
     const btnStyle = {
       fontSize: "32px",
       fill: "#fff",
-      backgroundColor: "#900",
+      backgroundColor: "#000",
       padding: { x: 20, y: 10 },
-      fixedWidth: 200,
     };
-
     let btn3 = this.add
-      .text(centerX - 120, centerY, "BO3", btnStyle)
+      .text(width / 2 - 120, height / 2, "BO3", btnStyle)
       .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true })
-      .setAlign("center");
+      .setInteractive({ useHandCursor: true });
     let btn5 = this.add
-      .text(centerX + 120, centerY, "BO5", btnStyle)
+      .text(width / 2 + 120, height / 2, "BO5", btnStyle)
       .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true })
-      .setAlign("center");
-
+      .setInteractive({ useHandCursor: true });
     btn3.on("pointerdown", () => this.setupMatch(3, txt, btn3, btn5));
     btn5.on("pointerdown", () => this.setupMatch(5, txt, btn3, btn5));
   }
@@ -161,8 +177,6 @@ export default class GameScene extends Phaser.Scene {
     this.healthBar1.setVisible(true);
     this.healthBar2.setVisible(true);
     this.timerText.setVisible(true);
-    this.p1Surrender.setVisible(true);
-    this.p2Surrender.setVisible(true);
     this.startNewRound();
   }
 
@@ -171,25 +185,28 @@ export default class GameScene extends Phaser.Scene {
     this.gameOver = false;
     this.isPaused = true;
     this.timeLeft = 99;
-    this.timerText.setText("99").setColor("#fff");
-    this.player1.setPosition(250, 500).clearTint();
-    this.player2.setPosition(this.scale.width - 250, 500).clearTint();
+    this.timerText.setText("99");
+    this.player1.setPosition(250, 500).state = 0;
+    this.player2.setPosition(this.scale.width - 250, 500).state = 0;
     this.player1.hp = gameConfig.maxHp;
     this.player2.hp = gameConfig.maxHp;
 
     let introText = this.add
       .text(this.scale.width / 2, this.scale.height / 2, "", {
-        fontSize: "80px",
+        fontSize: "100px",
         fontStyle: "bold",
+        fill: "#000",
+        stroke: "#fff",
+        strokeThickness: 10,
       })
       .setOrigin(0.5);
-    let steps = ["3", "2", "1", "FIGHT !"];
+    let steps = ["3", "2", "1", "勝負 !"];
     steps.forEach((val, i) => {
       this.time.delayedCall(i * 1000, () => {
         introText.setText(val);
-        if (val === "FIGHT !") {
+        if (i === 3) {
           this.isPaused = false;
-          this.time.delayedCall(500, () => introText.destroy());
+          this.time.delayedCall(800, () => introText.destroy());
           this.startTimer();
         }
       });
@@ -225,25 +242,15 @@ export default class GameScene extends Phaser.Scene {
     if (this.player1.hp <= 0 || this.player2.hp <= 0) this.checkWinner();
   }
 
-  handleManualWin(winner) {
-    if (winner === "P1") this.player2.hp = 0;
-    else this.player1.hp = 0;
-    this.checkWinner();
-  }
-
   checkWinner() {
     if (this.timerEvent) this.timerEvent.remove();
     if (this.gameOver) return;
     this.gameOver = true;
     this.physics.pause();
-    let winner =
-      this.player1.hp > this.player2.hp
-        ? "P1"
-        : this.player2.hp > this.player1.hp
-        ? "P2"
-        : "DRAW";
+    let winner = this.player1.hp > this.player2.hp ? "P1" : "P2";
     if (winner === "P1") this.p1Score++;
     else if (winner === "P2") this.p2Score++;
+
     if (this.p1Score >= this.needsWins || this.p2Score >= this.needsWins)
       this.displayFinalVictory(winner);
     else this.displayRoundVictory(winner);
@@ -251,10 +258,11 @@ export default class GameScene extends Phaser.Scene {
 
   displayRoundVictory(winner) {
     let roundTxt = this.add
-      .text(this.scale.width / 2, 200, `ROUND POUR ${winner}`, {
-        fontSize: "40px",
+      .text(this.scale.width / 2, 250, `勝者: ${winner}`, {
+        fontSize: "60px",
+        fill: "#fff",
         backgroundColor: "#000",
-        padding: 15,
+        padding: 20,
       })
       .setOrigin(0.5);
     this.time.delayedCall(2000, () => {
@@ -270,20 +278,16 @@ export default class GameScene extends Phaser.Scene {
       this.scale.width,
       this.scale.height,
       0x000000,
-      0.7
+      0.85
     );
     this.add
       .text(
         this.scale.width / 2,
         this.scale.height / 2 - 50,
         `${winner} GAGNE !`,
-        { fontSize: "60px", fill: "#0f0" }
+        { fontSize: "80px", fill: "#ff0" }
       )
       .setOrigin(0.5);
-    this.input.keyboard.once("keydown-R", () => {
-      this.p1Score = 0;
-      this.p2Score = 0;
-      this.scene.restart();
-    });
+    this.input.keyboard.once("keydown-R", () => this.scene.restart());
   }
 }
