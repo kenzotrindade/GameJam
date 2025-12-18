@@ -8,8 +8,6 @@ const statePlayer = Object.freeze({
   block: 3,
   hitstun: 4,
   dead: 5,
-  dash: 6,
-  jump: 7,
 });
 
 const dataAttack = {
@@ -40,14 +38,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     scene.physics.add.existing(this);
     this.setOrigin(0.5, 1);
     this.setCollideWorldBounds(true);
-    this.setScale(5);
+    this.setScale(4);
     this.baseColor = color;
     this.hp = gameConfig.maxHp;
     this.state = statePlayer.idle;
     this.direction = x > scene.sys.game.config.width / 2 ? -1 : 1;
     this.setFlipX(this.direction === -1);
     this.clearTint();
-    this.lastclick = [null, null, null, null, null];
   }
 
   update(keys, opponent) {
@@ -69,7 +66,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     const isGrounded = this.body.touching.down;
     this.setVelocityX(0);
-    this.setScale(5, 5);
+    this.setScale(4, 4);
     this.body.setSize(this.width, this.height);
     this.body.setOffset(0, 0);
 
@@ -94,7 +91,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const walkSpeed = 300;
     const walkBackSpeed = 200;
 
-    if (keys.left.isDown && !keys.down.isDown) {
+    if (keys.left.isDown) {
       if (this.x < opponent.x) {
         this.setVelocityX(-walkBackSpeed);
         this.state = statePlayer.block;
@@ -102,7 +99,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.setVelocityX(-walkSpeed);
         this.state = statePlayer.walk;
       }
-    } else if (keys.right.isDown && !keys.down.isDown) {
+    } else if (keys.right.isDown) {
       if (this.x > opponent.x) {
         this.setVelocityX(walkBackSpeed);
         this.state = statePlayer.block;
@@ -111,16 +108,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.state = statePlayer.walk;
       }
     } else if (keys.down.isDown && isGrounded) {
-      this.setScale(5, 3.5);
-      if (keys.left.isDown || keys.right.isDown) {
-        this.state = statePlayer.block;
-      }
+      this.setScale(4, 3.5);
+      this.body.setSize(this.width, this.height / 2);
+      this.body.setOffset(0, this.height / 2);
     } else {
       this.state = statePlayer.idle;
     }
 
     if (keys.up.isDown && isGrounded) {
-      this.setVelocityY(-800);
+      this.setVelocityY(-550);
     }
   }
 
@@ -134,19 +130,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const hitboxHalfWidth = config.range / 2;
     const offset = playerHalfWidth + hitboxHalfWidth;
     const hitboxX = this.x + offset * this.direction;
-    const hitboxY = 500;
+    const hitboxY = this.y - this.height / 2;
 
     const hitbox = this.scene.add.rectangle(
       hitboxX,
       hitboxY,
-      boxWidth,
-      50,
+      config.range,
+      100,
       0xffffff,
       0
     );
 
     this.scene.physics.add.existing(hitbox);
-    hitbox.body.setAllowGravity(false);
     const enemy =
       this === this.scene.player1 ? this.scene.player2 : this.scene.player1;
 
@@ -160,7 +155,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
       });
     }
-    this.scene.time.delayedCall(200, () => {
+    this.scene.time.delayedCall(config.hitstuntDuration, () => {
       hitbox.destroy();
       if (
         this.state !== statePlayer.dead &&
