@@ -24,7 +24,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.baseColor = color;
     this.hp = gameConfig.maxHp;
     this.state = statePlayer.idle;
-    this.direction = 1;
+
+    if (x > scene.sys.game.config.width / 2) {
+      this.setFlipX(true);
+      this.direction = -1;
+    } else {
+      this.setFlipX(false);
+      this.direction = 1;
+    }
+
     this.clearTint();
   }
 
