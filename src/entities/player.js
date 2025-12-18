@@ -201,7 +201,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.hp -= amount;
 
     if (this.scene.hitParticles) {
-      this.scene.hitParticles.explode(10, this.x, this.y - 50);
+      this.scene.hitParticles.explode(15, this.x, this.y - 250);
     }
 
     if (this.hp <= 0) {

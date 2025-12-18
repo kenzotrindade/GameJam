@@ -85,7 +85,15 @@ export default class GameScene extends Phaser.Scene {
     // --- 1. DÉCOR ---
     this.add.image(width / 2, height / 2, "fond").setDisplaySize(width, height);
     // ... tes particules petal et hitParticles (copie-colle ton code existant ici) ...
-    // ... code particules ...
+    // --- AJOUT DE L'EFFET DE SANG ICI ---
+    this.hitParticles = this.add.particles(0, 0, "hit_particle", {
+      speed: { min: 50, max: 200 },
+      angle: { min: 0, max: 360 },
+      scale: { start: 1.5, end: 0 },
+      lifespan: 600,
+      gravityY: 500,
+      emitting: false,
+    });
 
     // --- 2. CRÉATION DES ANIMATIONS (AUTO) ---
     // Cette fonction crée toutes les anims pour une couleur donnée (red ou emerald)
