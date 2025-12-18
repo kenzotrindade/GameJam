@@ -132,7 +132,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     if (this.state === statePlayer.block) {
       amount = Math.floor(amount * 0.2);
-      console.log("BloquÃ© !");
+      console.log("Bloqué !");
     }
 
     this.hp -= amount;
