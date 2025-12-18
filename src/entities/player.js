@@ -8,9 +8,28 @@ const statePlayer = Object.freeze({
   block: 3,
   hitstun: 4,
   dead: 5,
-  dash: 6,
-  jump: 7,
 });
+
+const dataAttack = {
+  low: {
+    damage: 5,
+    range: 120,
+    hitstuntDuration: 200,
+    color: 0xffff00,
+  },
+  mid: {
+    damage: 10,
+    range: 140,
+    hitstuntDuration: 400,
+    color: 0xffa500,
+  },
+  heavy: {
+    damage: 15,
+    range: 160,
+    hitstuntDuration: 800,
+    color: 0xff0000,
+  },
+};
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y, texture, color) {
@@ -19,14 +38,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     scene.physics.add.existing(this);
     this.setOrigin(0.5, 1);
     this.setCollideWorldBounds(true);
-    this.setScale(5);
+    this.setScale(4);
     this.baseColor = color;
     this.hp = gameConfig.maxHp;
     this.state = statePlayer.idle;
     this.direction = x > scene.sys.game.config.width / 2 ? -1 : 1;
     this.setFlipX(this.direction === -1);
     this.clearTint();
-    this.lastclick = [null, null, null, null, null];
   }
 
   update(keys, opponent) {
@@ -42,23 +60,38 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
+    if (this.state === statePlayer.attack) {
+      return;
+    }
+
     const isGrounded = this.body.touching.down;
     this.setVelocityX(0);
-    this.setScale(5, 5);
+    this.setScale(4, 4);
     this.body.setSize(this.width, this.height);
     this.body.setOffset(0, 0);
 
     if (this.state === statePlayer.attack) return;
 
-    if (Phaser.Input.Keyboard.JustDown(keys.attack)) {
-      this.executeAttack();
+    // if (Phaser.Input.Keyboard.JustDown(keys.attack)) {
+    //   this.executeAttack();
+    //   return;
+    // }
+
+    if (Phaser.Input.Keyboard.JustDown(keys.lowattack)) {
+      this.executeAttack("low");
+      return;
+    } else if (Phaser.Input.Keyboard.JustDown(keys.midattack)) {
+      this.executeAttack("mid");
+      return;
+    } else if (Phaser.Input.Keyboard.JustDown(keys.heavyattack)) {
+      this.executeAttack("heavy");
       return;
     }
 
     const walkSpeed = 300;
     const walkBackSpeed = 200;
 
-    if (keys.left.isDown && !keys.down.isDown) {
+    if (keys.left.isDown) {
       if (this.x < opponent.x) {
         this.setVelocityX(-walkBackSpeed);
         this.state = statePlayer.block;
@@ -66,7 +99,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.setVelocityX(-walkSpeed);
         this.state = statePlayer.walk;
       }
-    } else if (keys.right.isDown && !keys.down.isDown) {
+    } else if (keys.right.isDown) {
       if (this.x > opponent.x) {
         this.setVelocityX(walkBackSpeed);
         this.state = statePlayer.block;
@@ -75,57 +108,62 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.state = statePlayer.walk;
       }
     } else if (keys.down.isDown && isGrounded) {
-      this.setScale(5, 3.5);
-      if (keys.left.isDown || keys.right.isDown) {
-        this.state = statePlayer.block;
-      }
+      this.setScale(4, 3.5);
+      this.body.setSize(this.width, this.height / 2);
+      this.body.setOffset(0, this.height / 2);
     } else {
       this.state = statePlayer.idle;
     }
 
     if (keys.up.isDown && isGrounded) {
-      this.setVelocityY(-800);
+      this.setVelocityY(-550);
     }
   }
 
-  executeAttack() {
+  executeAttack(type) {
+    const config = dataAttack[type];
     this.state = statePlayer.attack;
     this.setVelocityX(0);
-    this.setTint(0xffff00);
+    this.setTint(config.color);
 
-    const boxWidth = 100;
     const playerHalfWidth = this.displayWidth / 2;
-
-    const hitboxHalfWidth = boxWidth / 2;
+    const hitboxHalfWidth = config.range / 2;
     const offset = playerHalfWidth + hitboxHalfWidth;
     const hitboxX = this.x + offset * this.direction;
-    const hitboxY = 500;
+    const hitboxY = this.y - this.height / 2;
 
     const hitbox = this.scene.add.rectangle(
       hitboxX,
       hitboxY,
-      boxWidth,
-      50,
+      config.range,
+      100,
       0xffffff,
       0
     );
+
     this.scene.physics.add.existing(hitbox);
-    hitbox.body.setAllowGravity(false);
     const enemy =
       this === this.scene.player1 ? this.scene.player2 : this.scene.player1;
+
     if (enemy) {
       this.scene.physics.overlap(hitbox, enemy, () => {
         if (
           enemy.state !== statePlayer.hitstun &&
           enemy.state !== statePlayer.dead
         ) {
-          enemy.takeDamage(10, this.x);
+          enemy.takeDamage(config.damage, this.x);
         }
       });
     }
-    this.scene.time.delayedCall(200, () => {
+    this.scene.time.delayedCall(config.hitstuntDuration, () => {
       hitbox.destroy();
-      if (this.state !== statePlayer.dead) this.state = statePlayer.idle;
+      if (
+        this.state !== statePlayer.dead &&
+        this.state !== statePlayer.hitstun
+      ) {
+        this.state = statePlayer.idle;
+        this.setTint(this.baseColor);
+      }
     });
   }
 
