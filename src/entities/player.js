@@ -1,6 +1,15 @@
 import Phaser from "phaser";
 import { gameConfig } from "../constants.js";
 
+const statePlayer = Object.freeze({
+  idle: 0,
+  walk: 1,
+  attack: 2,
+  block: 3,
+  hitstun: 4,
+  dead: 5,
+});
+
 export class Player extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y, texture, color) {
     super(scene, x, y, texture);
@@ -8,126 +17,129 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
+    this.setOrigin(0.5, 1);
     this.setCollideWorldBounds(true);
     this.baseColor = color;
     this.setTint(this.baseColor);
 
     this.hp = gameConfig.maxHp;
-    this.state = "IDLE";
-    this.isAttacking = false;
-    this.isBlocking = false;
+    this.state = statePlayer.idle;
     this.direction = 1;
   }
 
-  update(keys) {
+  update(keys, opponent) {
     if (
-      this.state === "HURT" ||
-      this.state === "DEAD" ||
-      this.state === "ATTACK"
+      this.state === statePlayer.attack ||
+      this.state === statePlayer.hitstun ||
+      this.state === statePlayer.dead
     )
       return;
 
-    if (keys.attack && Phaser.Input.Keyboard.JustDown(keys.attack)) {
-      console.log("BAM !");
-      this.attack();
+    this.setVelocityX(0);
+    this.setScale(1, 1);
+    this.body.setSize(this.width, this.height);
+
+    const walkSpeed = 300;
+    const walkBackSpeed = 200;
+
+    // --- LOGIQUE D'ATTAQUE ---
+    if (Phaser.Input.Keyboard.JustDown(keys.attack)) {
+      this.executeAttack(opponent);
       return;
     }
 
-    this.setVelocityX(0);
-
-    const speed = 160;
-
     if (keys.left.isDown) {
-      this.setVelocityX(-speed);
-      if (this.state !== "ATTACK") this.state = "WALK";
+      if (this.x < opponent.x) {
+        this.setVelocityX(-walkBackSpeed);
+        this.state = statePlayer.block;
+      } else {
+        this.setVelocityX(-walkSpeed);
+        this.state = statePlayer.walk;
+      }
     } else if (keys.right.isDown) {
-      this.setVelocityX(speed);
-      if (this.state !== "ATTACK") this.state = "WALK";
+      if (this.x > opponent.x) {
+        this.setVelocityX(walkBackSpeed);
+        this.state = statePlayer.block;
+      } else {
+        this.setVelocityX(walkSpeed);
+        this.state = statePlayer.walk;
+      }
+    } else if (keys.down.isDown) {
+      this.setScale(1, 0.5);
+      this.body.setSize(this.width, this.height / 2);
     } else {
-      if (this.state !== "ATTACK") this.state = "IDLE";
+      this.state = statePlayer.idle;
     }
 
     if (keys.up.isDown && this.body.touching.down) {
-      this.setVelocityY(-330);
+      this.setVelocityY(-400);
     }
   }
 
-  attack() {
-    this.state = "ATTACK";
+  executeAttack(opponent) {
+    this.state = statePlayer.attack;
     this.setVelocityX(0);
+    this.setTint(0xffffff);
 
-    this.setTint(0xffff00);
-
-    const hitboxX = this.x + 40 * this.direction;
-    const hitboxY = this.y;
-
-    const hitbox = this.scene.add.rectangle(
-      hitboxX,
-      hitboxY,
-      40,
-      40,
-      0xffffff,
-      0.5
+    const range = 60;
+    const dist = Phaser.Math.Distance.Between(
+      this.x,
+      this.y,
+      opponent.x,
+      opponent.y
     );
-    this.scene.physics.add.existing(hitbox);
 
-    const enemy =
-      this === this.scene.player1 ? this.scene.player2 : this.scene.player1;
+    const isFacingOpponent =
+      (this.direction === 1 && this.x < opponent.x) ||
+      (this.direction === -1 && this.x > opponent.x);
 
-    if (enemy) {
-      this.scene.physics.overlap(hitbox, enemy, () => {
-        if (enemy.state !== "HURT" && enemy.state !== "DEAD") {
-          enemy.takeDamage(10, this.x);
-        }
-      });
+    if (dist < range && isFacingOpponent) {
+      opponent.takeDamage(10, this.x);
     }
 
-    this.scene.time.delayedCall(1000, () => {
-      hitbox.destroy();
-
-      if (this.state != "HURT" && this.state != "DEAD") {
-        this.state = "IDLE";
+    this.scene.time.delayedCall(300, () => {
+      if (this.state !== statePlayer.dead) {
+        this.state = statePlayer.idle;
         this.setTint(this.baseColor);
       }
     });
   }
 
   takeDamage(amount, attackerX) {
-    if (this.state === "DEAD") return;
+    if (this.state === statePlayer.dead) return;
 
-    if (this.isBlocking) {
-      amount = 0;
+    if (this.state === statePlayer.block) {
+      amount = Math.floor(amount * 0.2);
     }
 
     this.hp -= amount;
 
     if (this.hp <= 0) {
       this.hp = 0;
-      this.state = "DEAD";
+      this.state = statePlayer.dead;
       this.setTint(0x000000);
-      console.log("KO !");
       return;
     }
 
-    this.state = "HURT";
+    this.state = statePlayer.hitstun;
     this.setTint(0xff0000);
 
     const knockbackDir = this.x < attackerX ? -1 : 1;
-    this.setVelocityX(gameConfig.knockbackX * knockbackDir);
-    this.setVelocityY(gameConfig.knockbackY);
+    this.setVelocityX(200 * knockbackDir);
+    this.setVelocityY(-150);
 
-    this.scene.time.delayedCall(gameConfig.hitstuntDuration, () => {
-      this.clearTint();
-      this.setTint(this.baseColor);
-
-      if (this.state !== "DEAD") {
-        this.state = "IDLE";
+    this.scene.time.delayedCall(gameConfig.hitstuntDuration || 400, () => {
+      if (this.state !== statePlayer.dead) {
+        this.clearTint();
+        this.setTint(this.baseColor);
+        this.state = statePlayer.idle;
       }
     });
   }
 
   updateFacing(opponent) {
-    if (this.state === "HURT" || this.state === "DEAD") return;
+    if (this.state === statePlayer.hitstun || this.state === statePlayer.dead)
+      return;
 
     if (this.x < opponent.x) {
       this.setFlipX(false);
@@ -136,10 +148,5 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.setFlipX(true);
       this.direction = -1;
     }
-  }
-
-  handleInput(data) {
-    if (this.state === "HURT" || this.state === "DEAD") return;
-    return data;
   }
 }
