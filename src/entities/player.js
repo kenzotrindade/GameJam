@@ -75,11 +75,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   update(keys, opponent) {
-    if (this.state === statePlayer.dead) return;
+    if (this.state === statePlayer.dead) {
+      this.setVelocityX(0);
+      return;
+    }
+
+    // --- SECURITE KNOCKBACK ---
+    // Si on est en hitstun, on ne touche PAS à la vélocité, on laisse la physique faire.
     if (this.state === statePlayer.hitstun) return;
 
     const isGrounded = this.body.touching.down;
-    this.setVelocityX(0);
+
+    // On ne met à zéro que si on n'est pas en train d'être repoussé par un blocage
+    // ou si on est dans un état contrôlable.
+    if (this.state !== statePlayer.attack) {
+      this.setVelocityX(0);
+    }
 
     // --- ANIMATIONS ---
     if (this.state !== statePlayer.attack) {
@@ -224,14 +235,36 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   takeDamage(amount, attackerX) {
     if (this.state === statePlayer.dead) return;
-    if (this.state === statePlayer.block) amount = Math.floor(amount * 0.2);
 
-    this.hp -= amount;
+    const attacker =
+      this === this.scene.player1 ? this.scene.player2 : this.scene.player1;
+    let knockbackMultiplier = 1.0;
 
-    if (this.scene.hitParticles) {
-      this.scene.hitParticles.explode(15, this.x, this.y - 350);
+    // --- LOGIQUE DE BLOCAGE ---
+    if (this.state === statePlayer.block) {
+      amount = Math.floor(amount * 0.2); // Dégâts réduits à 20%
+      knockbackMultiplier = 0.5; // La victime reculera moins (0.5x)
+
+      // L'ATTAQUANT PREND LE RECUL (1.5x)
+      if (attacker) {
+        const attackerPushDir = this.x < attackerX ? 1 : -1;
+        attacker.setVelocityX(200 * 1.5 * attackerPushDir);
+
+        // Petit flash blanc sur l'attaquant pour le feedback du contre
+        attacker.setTint(0xffffff);
+        this.scene.time.delayedCall(100, () => attacker.clearTint());
+      }
     }
 
+    // Application des dégâts
+    this.hp -= amount;
+
+    // Particules (position ajustée)
+    if (this.scene.hitParticles) {
+      this.scene.hitParticles.explode(15, this.x, this.y - 100);
+    }
+
+    // --- LOGIQUE MORT ---
     if (this.hp <= 0) {
       this.hp = 0;
       this.state = statePlayer.dead;
@@ -240,15 +273,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
+    // --- LOGIQUE HITSTUN (Victime) ---
     this.state = statePlayer.hitstun;
     this.play(this.textureKey + "_hit");
 
     const knockbackDir = this.x < attackerX ? -1 : 1;
-    this.setVelocityX(200 * knockbackDir);
-    this.setVelocityY(-200);
+    // On applique le multiplier (0.5 si block, 1.0 sinon)
+    this.setVelocityX(200 * knockbackMultiplier * knockbackDir);
+    this.setVelocityY(-200 * knockbackMultiplier);
 
-    // Pour le Hitstun, on garde l'event d'animation car c'est plus naturel
-    // (L'anim de hit dure le temps qu'il faut)
     this.once("animationcomplete", () => {
       if (this.state !== statePlayer.dead) {
         this.state = statePlayer.idle;
