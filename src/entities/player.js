@@ -19,6 +19,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     this.setOrigin(0, 1);
     this.setCollideWorldBounds(true);
+    this.setScale(4);
 
     this.baseColor = color;
     this.setTint(this.baseColor);
@@ -41,10 +42,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.setVelocityX(0);
     }
 
-    this.setScale(1, 1);
+    this.setVelocityX(0);
+    this.setScale(4, 4);
     this.body.setSize(this.width, this.height);
+    this.body.setOffset(0, 0);
 
-    if (this.state === statePlayer.attack) {
+    const walkSpeed = 300;
+    const walkBackSpeed = 200;
+
+    if (Phaser.Input.Keyboard.JustDown(keys.attack)) {
+      this.executeAttack(opponent);
       return;
     }
 
@@ -73,7 +80,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.state = statePlayer.walk;
       }
     } else if (keys.down.isDown && isGrounded) {
-      this.setScale(1, 0.5);
+      this.setScale(4, 3.5);
       this.body.setSize(this.width, this.height / 2);
       this.body.setOffset(0, this.height / 2);
     } else {
@@ -90,21 +97,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setVelocityX(0);
     this.setTint(0xffff00);
 
-    const hitboxX = this.x + 40 * this.direction;
-    const hitboxY = this.y - this.height / 2;
-
-    const hitbox = this.scene.add.rectangle(
-      hitboxX,
-      hitboxY,
-      40,
-      40,
-      0xffffff,
-      0
+    const range = 150;
+    const dist = Phaser.Math.Distance.Between(
+      this.x,
+      this.y,
+      opponent.x,
+      opponent.y
     );
-    this.scene.physics.add.existing(hitbox);
-
-    const enemy =
-      this === this.scene.player1 ? this.scene.player2 : this.scene.player1;
+    const isFacingOpponent =
+      (this.direction === 1 && this.x < opponent.x) ||
+      (this.direction === -1 && this.x > opponent.x);
 
     if (enemy) {
       this.scene.physics.overlap(hitbox, enemy, () => {
@@ -132,11 +134,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   takeDamage(amount, attackerX) {
     if (this.state === statePlayer.dead) return;
-
-    if (this.state === statePlayer.block) {
-      amount = Math.floor(amount * 0.2);
-      console.log("Bloqué !");
-    }
+    if (this.state === statePlayer.block) amount = Math.floor(amount * 0.2);
 
     this.hp -= amount;
 
@@ -171,7 +169,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.state === statePlayer.attack
     )
       return;
-
     if (this.x < opponent.x) {
       this.setFlipX(false);
       this.direction = 1;
