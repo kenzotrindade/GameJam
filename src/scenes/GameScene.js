@@ -198,13 +198,6 @@ export default class GameScene extends Phaser.Scene {
     // On met 'null' en couleur car il est déjà vert naturellement !
     this.player2 = new Player(this, width - 250, height - 100, "emerald", null);
 
-    this.heatlhBar1 = this.add
-      .rectangle(100, 30, 200, 20, 0xffff00)
-      .setOrigin(0, 0.5);
-    this.heatlhBar2 = this.add
-      .rectangle(550, 30, 200, 20, 0xffff00)
-      .setOrigin(0, 0.5);
-
     this.physics.add.collider(this.player1, platforms);
     this.physics.add.collider(this.player2, platforms);
     this.physics.add.collider(this.player1, this.player2);
