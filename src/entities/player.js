@@ -14,37 +14,37 @@ const dataAttack = {
   low: {
     damage: 5,
     range: 120,
-    hitstuntDuration: 400,
-    animSuffix: "_attack1", // Juste le suffixe !
+    // Temps pendant lequel le joueur est bloqué (Cooldown)
+    duration: 400,
+    animSuffix: "_attack1",
   },
   mid: {
     damage: 10,
     range: 140,
-    hitstuntDuration: 600,
+    duration: 600,
     animSuffix: "_attack2",
   },
   heavy: {
     damage: 15,
     range: 160,
-    hitstuntDuration: 900,
-    animSuffix: "_attack2", // On recycle l'anim 2 pour le heavy
+    // Grosse attaque = Gros temps de blocage (900ms)
+    duration: 900,
+    animSuffix: "_attack2",
   },
 };
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y, textureKey, color) {
-    // textureKey sera "samurai"
     super(scene, x, y, textureKey + "_idle");
 
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    this.textureKey = textureKey; // On sauvegarde "samurai" pour plus tard
+    this.textureKey = textureKey;
 
     this.setOrigin(0.5, 1);
     this.setCollideWorldBounds(true);
 
-    // --- SCALE & HITBOX (Sprites 200x200) ---
     this.setScale(2.5);
     this.body.setSize(70, 80);
     this.body.setOffset(70, 75);
@@ -62,7 +62,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.play(this.textureKey + "_idle");
   }
 
-  // Petite méthode helper pour le restart
   resetPosition(x, y) {
     this.setPosition(x, y);
     this.state = statePlayer.idle;
@@ -80,7 +79,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const isGrounded = this.body.touching.down;
     this.setVelocityX(0);
 
-    // --- ANIMATIONS DYNAMIQUES ---
+    // --- ANIMATIONS ---
     if (this.state !== statePlayer.attack) {
       if (!isGrounded) {
         if (this.body.velocity.y < 0) {
@@ -97,6 +96,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
+    // Si on attaque, on ne peut rien faire d'autre (Cooldown)
     if (this.state === statePlayer.attack) return;
 
     if (Phaser.Input.Keyboard.JustDown(keys.lowattack)) {
@@ -116,7 +116,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (keys.left.isDown) {
       if (this.x < opponent.x) {
         this.setVelocityX(-walkBackSpeed);
-        this.state = statePlayer.block; // Faudrait une anim de block un jour !
+        this.state = statePlayer.block;
       } else {
         this.setVelocityX(-walkSpeed);
         this.state = statePlayer.walk;
@@ -143,13 +143,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.state = statePlayer.attack;
     this.setVelocityX(0);
 
-    // Construction du nom de l'anim : "samurai" + "_attack1"
+    // 1. On lance l'animation
     this.play(this.textureKey + config.animSuffix);
 
+    // 2. Hitbox
     const playerHalfWidth = this.displayWidth / 2;
     const hitboxHalfWidth = config.range / 2;
     const offset = playerHalfWidth * 0.6 + hitboxHalfWidth;
-
     const hitboxX = this.x + offset * this.direction;
     const hitboxY = this.y - this.displayHeight / 2;
 
@@ -178,19 +178,31 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       });
     }
 
+    // --- C'EST ICI QUE ÇA CHANGE ---
+
+    // A. Événement VISUEL : Quand l'animation du coup est finie...
     this.once("animationcomplete", () => {
-      hitbox.destroy();
+      // Si on est toujours vivant et pas stun...
+      if (this.state === statePlayer.attack) {
+        // ... On se remet visuellement en position d'attente (Idle)
+        // CA ÉVITE L'EFFET LAGGY / STATUE
+        this.play(this.textureKey + "_idle", true);
+      }
+    });
+
+    // B. Événement LOGIQUE : Quand le Cooldown est fini...
+    this.scene.time.delayedCall(config.duration, () => {
+      if (hitbox.active) hitbox.destroy();
+
+      // On rend le contrôle au joueur SEULEMENT maintenant
       if (
         this.state !== statePlayer.dead &&
         this.state !== statePlayer.hitstun
       ) {
         this.state = statePlayer.idle;
+        // On est sûr d'être en idle
         this.play(this.textureKey + "_idle", true);
       }
-    });
-
-    this.scene.time.delayedCall(config.hitstuntDuration, () => {
-      if (hitbox.active) hitbox.destroy();
     });
   }
 
@@ -219,6 +231,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setVelocityX(200 * knockbackDir);
     this.setVelocityY(-200);
 
+    // Pour le Hitstun, on garde l'event d'animation car c'est plus naturel
+    // (L'anim de hit dure le temps qu'il faut)
     this.once("animationcomplete", () => {
       if (this.state !== statePlayer.dead) {
         this.state = statePlayer.idle;
