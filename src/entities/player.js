@@ -30,23 +30,30 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   update(keys, opponent) {
-    if (
-      this.state === statePlayer.attack ||
-      this.state === statePlayer.hitstun ||
-      this.state === statePlayer.dead
-    )
+    if (this.state === statePlayer.hitstun || this.state === statePlayer.dead) {
       return;
+    }
 
-    this.setVelocityX(0);
-    this.setScale(this.setScaleX > 0 ? 4 : -4, 4);
+    const isGrounded = this.body.touching.down;
 
-    const walkSpeed = 300;
-    const walkBackSpeed = 200;
+    if (this.state !== statePlayer.attack) {
+      this.setVelocityX(0);
+    }
+
+    this.setScale(1, 1);
+    this.body.setSize(this.width, this.height);
+
+    if (this.state === statePlayer.attack) {
+      return;
+    }
 
     if (Phaser.Input.Keyboard.JustDown(keys.attack)) {
       this.executeAttack();
       return;
     }
+
+    const walkSpeed = 300;
+    const walkBackSpeed = 200;
 
     if (keys.left.isDown) {
       if (this.x < opponent.x) {
@@ -64,15 +71,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.setVelocityX(walkSpeed);
         this.state = statePlayer.walk;
       }
-    } else if (keys.down.isDown) {
-      this.setScale(this.scaleX, 0.5);
-      this.body.setSize(60, 50);
+    } else if (keys.down.isDown && isGrounded) {
+      this.setScale(1, 0.5);
+      this.body.setSize(this.width, this.height / 2);
     } else {
       this.state = statePlayer.idle;
       this.body.setSize(60, 100);
     }
 
-    if (keys.up.isDown && this.body.touching.down) {
+    if (keys.up.isDown && isGrounded) {
       this.setVelocityY(-550);
     }
   }
@@ -100,7 +107,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           enemy.state !== statePlayer.hitstun &&
           enemy.state !== statePlayer.dead
         ) {
-          enemy.takeDamage(5, this.x);
+          enemy.takeDamage(10, this.x);
         }
       });
     }
