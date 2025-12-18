@@ -1,0 +1,2 @@
+-> Initialiser Phaser
+-> Jeu de combat en 2D, ressemblant à StreetFighter dans le thème japonais ( à voir pour les katanas  par la suite + retrouver une mécanique propre au jeu )
