@@ -89,13 +89,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setVelocityX(0);
     this.setTint(0xffff00);
 
-    const hitboxX = this.x + 40 * this.direction;
+    const boxWidth = 100;
+    const playerHalfWidth = this.displayWidth / 2;
+
+    const hitboxHalfWidth = boxWidth / 2;
+    const offset = playerHalfWidth + hitboxHalfWidth;
+    const hitboxX = this.x + offset * this.direction;
     const hitboxY = this.y - this.height / 2;
 
     const hitbox = this.scene.add.rectangle(
       hitboxX,
       hitboxY,
-      100,
+      boxWidth,
       100,
       0xffffff,
       0
