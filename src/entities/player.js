@@ -130,6 +130,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   takeDamage(amount, attackerX) {
+    if (this.scene.hitParticles) {
+      this.scene.hitParticles.explode(20, this.x, this.y);
+    }
     if (this.state === statePlayer.dead) return;
     if (this.state === statePlayer.block) amount = Math.floor(amount * 0.2);
     this.hp -= amount;

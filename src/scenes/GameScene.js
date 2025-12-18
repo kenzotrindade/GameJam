@@ -42,6 +42,25 @@ export default class GameScene extends Phaser.Scene {
       frequency: 150,
     });
 
+    const impactGraphics = this.make.graphics({ x: 0, y: 0, add: false });
+    impactGraphics.fillStyle(0xff0000, 1);
+    impactGraphics.fillRect(0, 0, 4, 4);
+    impactGraphics.generateTexture("hit_particle", 4, 4);
+
+    this.hitParticles = this.add.particles(0, 0, "hit_particle", {
+      speed: { min: 50, max: 200 },
+      angle: { min: 0, max: 360 },
+      scale: { start: 1.5, end: 0 },
+      lifespan: 600,
+      gravityY: 500,
+      emitting: false,
+      emitZone: {
+        type: "random",
+        source: new Phaser.Geom.Rectangle(-25, -120, 50, 120),
+      },
+    });
+    this.hitParticles.setDepth(100);
+
     const platforms = this.physics.add.staticGroup();
     const ground = this.add.rectangle(
       width / 2,
