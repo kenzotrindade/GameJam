@@ -20,7 +20,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   update(keys) {
-    if (this.state === "HURT" || this.state === "DEAD") return;
+    if (
+      this.state === "HURT" ||
+      this.state === "DEAD" ||
+      this.state === "ATTACK"
+    )
+      return;
+
+    if (keys.attack && Phaser.Input.Keyboard.JustDown(keys.attack)) {
+      console.log("BAM !");
+      this.attack();
+      return;
+    }
 
     this.setVelocityX(0);
 
@@ -39,6 +50,46 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (keys.up.isDown && this.body.touching.down) {
       this.setVelocityY(-330);
     }
+  }
+
+  attack() {
+    this.state = "ATTACK";
+    this.setVelocityX(0);
+
+    this.setTint(0xffff00);
+
+    const hitboxX = this.x + 40 * this.direction;
+    const hitboxY = this.y;
+
+    const hitbox = this.scene.add.rectangle(
+      hitboxX,
+      hitboxY,
+      40,
+      40,
+      0xffffff,
+      0.5
+    );
+    this.scene.physics.add.existing(hitbox);
+
+    const enemy =
+      this === this.scene.player1 ? this.scene.player2 : this.scene.player1;
+
+    if (enemy) {
+      this.scene.physics.overlap(hitbox, enemy, () => {
+        if (enemy.state !== "HURT" && enemy.state !== "DEAD") {
+          enemy.takeDamage(10, this.x);
+        }
+      });
+    }
+
+    this.scene.time.delayedCall(1000, () => {
+      hitbox.destroy();
+
+      if (this.state != "HURT" && this.state != "DEAD") {
+        this.state = "IDLE";
+        this.setTint(this.baseColor);
+      }
+    });
   }
 
   takeDamage(amount, attackerX) {

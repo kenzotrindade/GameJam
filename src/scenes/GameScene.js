@@ -33,12 +33,20 @@ export default class GameScene extends Phaser.Scene {
     ground.body.setSize(width, 40);
     platforms.add(ground);
 
-    this.cursors = this.input.keyboard.createCursorKeys();
+    this.keysP1 = this.input.keyboard.addKeys({
+      up: Phaser.Input.Keyboard.KeyCodes.UP,
+      left: Phaser.Input.Keyboard.KeyCodes.LEFT,
+      down: Phaser.Input.Keyboard.KeyCodes.DOWN,
+      right: Phaser.Input.Keyboard.KeyCodes.RIGHT,
+      attack: Phaser.Input.Keyboard.KeyCodes.SPACE,
+    });
+
     this.keysP2 = this.input.keyboard.addKeys({
       up: Phaser.Input.Keyboard.KeyCodes.Z,
       left: Phaser.Input.Keyboard.KeyCodes.Q,
       down: Phaser.Input.Keyboard.KeyCodes.S,
       right: Phaser.Input.Keyboard.KeyCodes.D,
+      attack: Phaser.Input.Keyboard.KeyCodes.ENTER,
     });
 
     this.player1 = new Player(this, 100, 400, "square", 0x3333ff);
@@ -110,7 +118,7 @@ export default class GameScene extends Phaser.Scene {
   update() {
     if (this.gameOver) return;
 
-    if (this.player1) this.player1.update(this.cursors);
+    if (this.player1) this.player1.update(this.keysP1);
     if (this.player2) this.player2.update(this.keysP2);
 
     this.player1.updateFacing(this.player2);
