@@ -8,26 +8,27 @@ const statePlayer = Object.freeze({
   block: 3,
   hitstun: 4,
   dead: 5,
+  dash: 6,
 });
 
 const dataAttack = {
   low: {
     damage: 5,
     range: 120,
-    hitstuntDuration: 200,
-    color: 0xffff00,
+    hitstuntDuration: 250,
+    color: 0xd64629,
   },
   mid: {
     damage: 10,
     range: 140,
-    hitstuntDuration: 400,
-    color: 0xffa500,
+    hitstuntDuration: 600,
+    color: 0xd64629,
   },
   heavy: {
     damage: 15,
     range: 160,
-    hitstuntDuration: 800,
-    color: 0xff0000,
+    hitstuntDuration: 900,
+    color: 0xd64629,
   },
 };
 
@@ -38,7 +39,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     scene.physics.add.existing(this);
     this.setOrigin(0.5, 1);
     this.setCollideWorldBounds(true);
-    this.setScale(4);
+    this.setScale(5);
     this.baseColor = color;
     this.hp = gameConfig.maxHp;
     this.state = statePlayer.idle;
@@ -60,13 +61,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
-    if (this.state === statePlayer.attack) {
-      return;
-    }
-
     const isGrounded = this.body.touching.down;
     this.setVelocityX(0);
-    this.setScale(4, 4);
+    this.setScale(5, 5);
     this.body.setSize(this.width, this.height);
     this.body.setOffset(0, 0);
 
@@ -83,19 +80,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
-    if (Phaser.Input.Keyboard.JustDown(keys.lowattack)) {
-      this.executeAttack("low");
-      return;
-    } else if (Phaser.Input.Keyboard.JustDown(keys.midattack)) {
-      this.executeAttack("mid");
-      return;
-    } else if (Phaser.Input.Keyboard.JustDown(keys.heavyattack)) {
-      this.executeAttack("heavy");
-      return;
-    }
-
     const walkSpeed = 300;
     const walkBackSpeed = 200;
+
+    if (Phaser.Input.Keyboard.JustDown(keys.dash) && !this.indash) {
+      this.indash = true;
+      let dash = 0;
+      if (keys.left.isDown) {
+        dash = this.x < opponent.x ? -walkBackSpeed * 3 : -walkSpeed * 3;
+      } else if (keys.right.isDown) {
+        dash = this.x > opponent.x ? walkBackSpeed * 3 : walkSpeed * 3;
+      }
+      if (dash !== 0) {
+        this.setVelocityX(dash);
+        this.scene.time.delayedCall(200, () => {});
+      }
+    }
 
     if (keys.left.isDown) {
       if (this.x < opponent.x) {
@@ -114,9 +114,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.state = statePlayer.walk;
       }
     } else if (keys.down.isDown && isGrounded) {
-      this.setScale(4, 3.5);
-      this.body.setSize(this.width, this.height / 2);
-      this.body.setOffset(0, this.height / 2);
+      this.setScale(5, 3.5);
     } else {
       this.state = statePlayer.idle;
     }
@@ -136,7 +134,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const hitboxHalfWidth = config.range / 2;
     const offset = playerHalfWidth + hitboxHalfWidth;
     const hitboxX = this.x + offset * this.direction;
-    const hitboxY = this.y - this.height / 2;
+    const hitboxY = this.y - this.displayHeight / 2;
 
     const hitbox = this.scene.add.rectangle(
       hitboxX,
@@ -146,8 +144,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       0xffffff,
       0
     );
-
     this.scene.physics.add.existing(hitbox);
+    hitbox.body.setAllowGravity(false);
+
     const enemy =
       this === this.scene.player1 ? this.scene.player2 : this.scene.player1;
 
@@ -161,6 +160,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
       });
     }
+
     this.scene.time.delayedCall(config.hitstuntDuration, () => {
       hitbox.destroy();
       if (
@@ -168,12 +168,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.state !== statePlayer.hitstun
       ) {
         this.state = statePlayer.idle;
-        this.setTint(this.baseColor);
+        this.clearTint();
       }
     });
   }
 
   takeDamage(amount, attackerX) {
+    if (this.scene.hitParticles) {
+      this.scene.hitParticles.explode(20, this.x, this.y - 60);
+    }
     if (this.state === statePlayer.dead) return;
     if (this.state === statePlayer.block) amount = Math.floor(amount * 0.2);
     this.hp -= amount;
