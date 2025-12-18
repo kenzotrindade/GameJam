@@ -17,7 +17,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    this.setOrigin(0.5, 1);
+    this.setOrigin(0, 1);
     this.setCollideWorldBounds(true);
 
     this.baseColor = color;
@@ -26,6 +26,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.hp = gameConfig.maxHp;
     this.state = statePlayer.idle;
     this.direction = 1;
+
+    this.lastclick = [];
   }
 
   update(keys, opponent) {
@@ -73,6 +75,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     } else if (keys.down.isDown && isGrounded) {
       this.setScale(1, 0.5);
       this.body.setSize(this.width, this.height / 2);
+      this.body.setOffset(0, this.height / 2);
     } else {
       this.state = statePlayer.idle;
     }
