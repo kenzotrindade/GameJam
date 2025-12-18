@@ -1,5 +1,5 @@
 import { gameConfig } from "../constants.js";
-import { Player } from "../entities/playerperso.js";
+import { Player } from "../entities/player.js";
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
