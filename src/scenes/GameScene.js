@@ -37,13 +37,6 @@ export default class GameScene extends Phaser.Scene {
     this.player1 = new Player(this, 150, 450, "square", 0x3333ff);
     this.player2 = new Player(this, 650, 450, "square", 0xff3333);
 
-    this.heatlhBar1 = this.add
-      .rectangle(100, 30, 200, 20, 0xffff00)
-      .setOrigin(0, 0.5);
-    this.heatlhBar2 = this.add
-      .rectangle(550, 30, 200, 20, 0xffff00)
-      .setOrigin(0, 0.5);
-
     this.physics.add.collider(this.player1, platforms);
     this.physics.add.collider(this.player2, platforms);
     this.physics.add.collider(this.player1, this.player2);
