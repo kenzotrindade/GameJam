@@ -114,14 +114,18 @@ export default class GameScene extends Phaser.Scene {
       left: Phaser.Input.Keyboard.KeyCodes.LEFT,
       down: Phaser.Input.Keyboard.KeyCodes.DOWN,
       right: Phaser.Input.Keyboard.KeyCodes.RIGHT,
-      attack: Phaser.Input.Keyboard.KeyCodes.SPACE,
+      lowattack: Phaser.Input.Keyboard.KeyCodes.C,
+      midattack: Phaser.Input.Keyboard.KeyCodes.X,
+      heavyattack: Phaser.Input.Keyboard.KeyCodes.W,
     });
     this.keysP2 = this.input.keyboard.addKeys({
       up: Phaser.Input.Keyboard.KeyCodes.Z,
       left: Phaser.Input.Keyboard.KeyCodes.Q,
       down: Phaser.Input.Keyboard.KeyCodes.S,
       right: Phaser.Input.Keyboard.KeyCodes.D,
-      attack: Phaser.Input.Keyboard.KeyCodes.ENTER,
+      lowattack: Phaser.Input.Keyboard.KeyCodes.U,
+      midattack: Phaser.Input.Keyboard.KeyCodes.I,
+      heavyattack: Phaser.Input.Keyboard.KeyCodes.O,
     });
   }
 

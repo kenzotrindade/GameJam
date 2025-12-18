@@ -15,7 +15,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     super(scene, x, y, texture);
     scene.add.existing(this);
     scene.physics.add.existing(this);
-    this.setOrigin(0.5, 1);
     this.setCollideWorldBounds(true);
 
     this.setScale(4);
@@ -27,7 +26,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.direction = 1;
 
     this.body.setSize(30, 60);
-    this.body.setOffset(50, 68);
+    this.body.setOffset(0, 0);
   }
 
   update(keys, opponent) {
