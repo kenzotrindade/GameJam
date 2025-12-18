@@ -272,22 +272,28 @@ export default class GameScene extends Phaser.Scene {
   }
 
   displayFinalVictory(winner) {
-    this.add.rectangle(
-      this.scale.width / 2,
-      this.scale.height / 2,
-      this.scale.width,
-      this.scale.height,
-      0x000000,
-      0.85
-    );
+    const { width, height } = this.scale;
+
+    this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.85);
+
     this.add
-      .text(
-        this.scale.width / 2,
-        this.scale.height / 2 - 50,
-        `${winner} GAGNE !`,
-        { fontSize: "80px", fill: "#ff0" }
-      )
+      .text(width / 2, height / 2 - 50, `${winner} GAGNE !`, {
+        fontSize: "80px",
+        fill: "#ff0",
+        fontStyle: "bold",
+      })
       .setOrigin(0.5);
-    this.input.keyboard.once("keydown-R", () => this.scene.restart());
+    this.add
+      .text(width / 2, height / 2 + 80, "APPUYEZ SUR [R] POUR RECOMMENCER", {
+        fontSize: "24px",
+        fill: "#fff",
+      })
+      .setOrigin(0.5);
+
+    this.input.keyboard.once("keydown-R", () => {
+      this.p1Score = 0;
+      this.p2Score = 0;
+      this.scene.restart();
+    });
   }
 }
