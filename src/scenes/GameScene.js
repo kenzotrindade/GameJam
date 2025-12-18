@@ -60,6 +60,34 @@ export default class GameScene extends Phaser.Scene {
       fill: "#00ff00",
       backgroundColor: "#00000088",
     });
+
+    this.p1Surrender = this.add
+      .text(80, 580, "P1 ABANDON", {
+        fontSize: "18px",
+        fill: "#fff",
+        backgroundColor: "#ff0000",
+        padding: { x: 10, y: 5 },
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandlerCursor: true })
+      .on("pointerdown", () => {
+        this.player1.hp = 0;
+        this.checkWinner();
+      });
+
+    this.p2Surrender = this.add
+      .text(780, 580, "P2 ABANDON", {
+        fontSize: "18px",
+        fill: "#fff",
+        backgroundColor: "#ff0000",
+        padding: { x: 10, y: 5 },
+      })
+      .setOrigin(1, 0.5)
+      .setInteractive({ useHandlerCursor: true })
+      .on("pointerdown", () => {
+        this.player2.hp = 0;
+        this.checkWinner();
+      });
   }
 
   update() {
@@ -85,6 +113,10 @@ export default class GameScene extends Phaser.Scene {
   checkWinner() {
     if (this.gameOver) return;
     this.gameOver = true;
+
+    this.p1Surrender.setVisible(false);
+    this.p2Surrender.setVisible(false);
+
     this.physics.pause();
 
     let winnerText = "";
