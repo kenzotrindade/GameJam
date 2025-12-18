@@ -16,11 +16,31 @@ export default class GameScene extends Phaser.Scene {
   preload() {
     this.load.image("samurai_p1", "img/samourai.png");
     this.load.image("samurai_p2", "img/samourai2.png");
+
+    const graphics = this.make.graphics({ x: 0, y: 0, add: false });
+    graphics.fillStyle(0xffb7c5, 1);
+    graphics.fillCircle(4, 4, 4);
+    graphics.generateTexture("petal", 8, 8);
   }
 
   create() {
     const width = this.sys.game.config.width;
     const height = this.sys.game.config.height;
+
+    this.add.rectangle(width / 2, height / 2, width, height, 0xf7d29a);
+    this.add.circle(width / 2, height * 0.4, 150, 0xff4d4d);
+
+    this.add.particles(0, 0, "petal", {
+      x: { min: 0, max: width },
+      y: -10,
+      lifespan: 6000,
+      speedY: { min: 40, max: 100 },
+      speedX: { min: -20, max: 50 },
+      scale: { start: 0.8, end: 0.4 },
+      rotate: { min: 0, max: 360 },
+      gravityY: 20,
+      frequency: 150,
+    });
 
     const platforms = this.physics.add.staticGroup();
     const ground = this.add.rectangle(
@@ -28,7 +48,7 @@ export default class GameScene extends Phaser.Scene {
       height - 20,
       width,
       40,
-      0x666666
+      0x222222
     );
     this.physics.add.existing(ground, true);
     platforms.add(ground);
@@ -52,9 +72,6 @@ export default class GameScene extends Phaser.Scene {
       down: Phaser.Input.Keyboard.KeyCodes.DOWN,
       right: Phaser.Input.Keyboard.KeyCodes.RIGHT,
       attack: Phaser.Input.Keyboard.KeyCodes.SPACE,
-      lowattack: Phaser.Input.Keyboard.KeyCodes.C,
-      midattack: Phaser.Input.Keyboard.KeyCodes.X,
-      heavyattack: Phaser.Input.Keyboard.KeyCodes.W,
     });
 
     this.keysP2 = this.input.keyboard.addKeys({
@@ -63,9 +80,6 @@ export default class GameScene extends Phaser.Scene {
       down: Phaser.Input.Keyboard.KeyCodes.S,
       right: Phaser.Input.Keyboard.KeyCodes.D,
       attack: Phaser.Input.Keyboard.KeyCodes.ENTER,
-      lowattack: Phaser.Input.Keyboard.KeyCodes.U,
-      midattack: Phaser.Input.Keyboard.KeyCodes.I,
-      heavyattack: Phaser.Input.Keyboard.KeyCodes.O,
     });
 
     this.timerText = this.add
@@ -76,77 +90,41 @@ export default class GameScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setVisible(false);
-
-    this.add
-      .rectangle(width * 0.35, 60, 305, 35, 0x000000, 0.5)
-      .setOrigin(1, 0.5);
     this.healthBar1 = this.add
       .rectangle(width * 0.35, 60, 300, 30, 0xffff00)
       .setOrigin(1, 0.5)
       .setVisible(false);
-
-    this.add
-      .rectangle(width * 0.65, 60, 305, 35, 0x000000, 0.5)
-      .setOrigin(0, 0.5);
     this.healthBar2 = this.add
       .rectangle(width * 0.65, 60, 300, 30, 0xffff00)
       .setOrigin(0, 0.5)
       .setVisible(false);
-
-    this.p1Surrender = this.add
-      .text(width * 0.35 - 300, 90, "ABANDON [P1]", {
-        backgroundColor: "#900",
-        padding: 5,
-      })
-      .setInteractive({ useHandCursor: true })
-      .on("pointerdown", () => this.handleManualWin("P2"))
-      .setVisible(false);
-
-    this.p2Surrender = this.add
-      .text(width * 0.65 + 300, 90, "ABANDON [P2]", {
-        backgroundColor: "#900",
-        padding: 5,
-      })
-      .setOrigin(1, 0)
-      .setInteractive({ useHandCursor: true })
-      .on("pointerdown", () => this.handleManualWin("P1"))
-      .setVisible(false);
-
-    this.debugText = this.add.text(10, height - 30, "", {
-      fontSize: "14px",
-      fill: "#0f0",
-    });
 
     this.showMenu();
   }
 
   showMenu() {
     const { width, height } = this.scale;
-    const centerX = width / 2;
-    const centerY = height / 2;
     let txt = this.add
-      .text(centerX, centerY - 100, "CHOISISSEZ LE FORMAT", {
-        fontSize: "42px",
+      .text(width / 2, height / 2 - 100, "SAMURAI SHOWDOWN", {
+        fontSize: "50px",
         fontStyle: "bold",
+        fill: "#000",
       })
       .setOrigin(0.5);
     const btnStyle = {
       fontSize: "32px",
       fill: "#fff",
-      backgroundColor: "#900",
+      backgroundColor: "#000",
       padding: { x: 20, y: 10 },
-      fixedWidth: 200,
     };
     let btn3 = this.add
-      .text(centerX - 120, centerY, "BO3", btnStyle)
+      .text(width / 2 - 120, height / 2, "BO3", btnStyle)
       .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true })
-      .setAlign("center");
+      .setInteractive({ useHandCursor: true });
     let btn5 = this.add
-      .text(centerX + 120, centerY, "BO5", btnStyle)
+      .text(width / 2 + 120, height / 2, "BO5", btnStyle)
       .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true })
-      .setAlign("center");
+      .setInteractive({ useHandCursor: true });
     btn3.on("pointerdown", () => this.setupMatch(3, txt, btn3, btn5));
     btn5.on("pointerdown", () => this.setupMatch(5, txt, btn3, btn5));
   }
@@ -160,8 +138,6 @@ export default class GameScene extends Phaser.Scene {
     this.healthBar1.setVisible(true);
     this.healthBar2.setVisible(true);
     this.timerText.setVisible(true);
-    this.p1Surrender.setVisible(true);
-    this.p2Surrender.setVisible(true);
     this.startNewRound();
   }
 
@@ -170,20 +146,19 @@ export default class GameScene extends Phaser.Scene {
     this.gameOver = false;
     this.isPaused = true;
     this.timeLeft = 99;
-    this.timerText.setText("99").setColor("#fff");
-    this.player1
-      .setPosition(250, 500)
-      .setTint(this.player1.baseColor).state = 0;
-    this.player2
-      .setPosition(this.scale.width - 250, 500)
-      .setTint(this.player2.baseColor).state = 0;
+    this.timerText.setText("99");
+    this.player1.setPosition(250, 500).state = 0;
+    this.player2.setPosition(this.scale.width - 250, 500).state = 0;
     this.player1.hp = gameConfig.maxHp;
     this.player2.hp = gameConfig.maxHp;
+    this.player1.clearTint();
+    this.player2.clearTint();
 
     let introText = this.add
       .text(this.scale.width / 2, this.scale.height / 2, "", {
         fontSize: "80px",
         fontStyle: "bold",
+        fill: "#000",
       })
       .setOrigin(0.5);
     let steps = ["3", "2", "1", "FIGHT !"];
@@ -226,12 +201,6 @@ export default class GameScene extends Phaser.Scene {
     if (this.player1.hp <= 0 || this.player2.hp <= 0) this.checkWinner();
   }
 
-  handleManualWin(winner) {
-    if (winner === "P1") this.player2.hp = 0;
-    else this.player1.hp = 0;
-    this.checkWinner();
-  }
-
   checkWinner() {
     if (this.timerEvent) this.timerEvent.remove();
     if (this.gameOver) return;
@@ -266,24 +235,19 @@ export default class GameScene extends Phaser.Scene {
 
   displayFinalVictory(winner) {
     const { width, height } = this.scale;
-
     this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.8);
-
     this.add
       .text(width / 2, height / 2 - 50, `${winner} GAGNE LE MATCH !`, {
         fontSize: "60px",
         fill: "#0f0",
-        fontStyle: "bold",
       })
       .setOrigin(0.5);
-
     this.add
       .text(width / 2, height / 2 + 50, "APPUYEZ SUR [R] POUR RECOMMENCER", {
         fontSize: "24px",
         fill: "#fff",
       })
       .setOrigin(0.5);
-
     this.input.keyboard.once("keydown-R", () => {
       this.p1Score = 0;
       this.p2Score = 0;
