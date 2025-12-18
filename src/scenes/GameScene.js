@@ -5,9 +5,33 @@ export default class GameScene extends Phaser.Scene {
   constructor() {
     super("GameScene");
     this.gameOver = false;
+    this.p1Score = 0;
+    this.p2Score = 0;
+    this.maxRounds = 3;
+    this.needsWins = 2;
+    this.isPaused = true;
   }
 
   create() {
+    const width = this.sys.game.config.width;
+    const height = this.sys.game.config.height;
+
+    let txt = this.add
+      .text(width / 2, 200, "Choisissez le format", { fontSize: "32px" })
+      .setOrigin(0.5);
+    let btn3 = this.add
+      .text(width / 2 - 100, 300, "[ BO3 ]", { fontSize: "40px", fill: "#0f0" })
+      .setInteractive();
+    let btn5 = this.add
+      .text(width / 2 + 100, 300, "[ BO5 ]", { fontSize: "40px", fill: "#0f0" })
+      .setInteractive();
+
+    btn3.on("pointerdown", () => {
+      this.setupMatch(3, txt, btn3, btn5);
+    });
+    btn5.on("pointerdown", () => {
+      this.setupMatch(5, txt, btn3, btn5);
+    });
     this.gameOver = false;
 
     const graphics = this.make.graphics();
@@ -15,9 +39,6 @@ export default class GameScene extends Phaser.Scene {
     graphics.fillRect(0, 0, 32, 32);
     graphics.generateTexture("square", 32, 32);
     graphics.destroy();
-
-    const width = this.sys.game.config.width;
-    const height = this.sys.game.config.height;
 
     const platforms = this.physics.add.staticGroup();
 
@@ -47,7 +68,6 @@ export default class GameScene extends Phaser.Scene {
     this.physics.add.collider(this.player1, platforms);
     this.physics.add.collider(this.player2, platforms);
     this.physics.add.collider(this.player1, this.player2);
-    this.physics.add.collider(this.player, this.ground);
 
     this.physics.world.setBounds(0, 0, width, height);
 
@@ -57,21 +77,8 @@ export default class GameScene extends Phaser.Scene {
     this.timeLeft = 99;
     this.timerText = this.add
       .text(400, 50, "99", { fontSize: "64px", fill: "#fff" })
-      .setOrigin(0.5);
-
-    this.time.addEvent({
-      delay: 1000,
-      callback: () => {
-        if (this.timeLeft > 0 && !this.gameOver) {
-          this.timeLeft--;
-          this.timerText.setText(this.timeLeft);
-        } else if (this.timeLeft === 0) {
-          this.checkWinner();
-        }
-      },
-      callbackScope: this,
-      loop: true,
-    });
+      .setOrigin(0.5)
+      .setVisible(false);
 
     this.debugText = this.add.text(10, 10, "", {
       fontSize: "16px",
@@ -87,7 +94,8 @@ export default class GameScene extends Phaser.Scene {
         padding: { x: 10, y: 5 },
       })
       .setOrigin(0.5)
-      .setInteractive({ useHandlerCursor: true })
+      .setVisible(false)
+      .setInteractive({ useHandCursor: true })
       .on("pointerdown", () => {
         this.player1.hp = 0;
         this.checkWinner();
@@ -101,7 +109,8 @@ export default class GameScene extends Phaser.Scene {
         padding: { x: 10, y: 5 },
       })
       .setOrigin(1, 0.5)
-      .setInteractive({ useHandlerCursor: true })
+      .setVisible(false)
+      .setInteractive({ useHandCursor: true })
       .on("pointerdown", () => {
         this.player2.hp = 0;
         this.checkWinner();
@@ -110,6 +119,7 @@ export default class GameScene extends Phaser.Scene {
 
   update() {
     if (this.gameOver) return;
+    if (this.isPaused) return;
 
     if (this.player1) this.player1.update(this.cursors);
     if (this.player2) this.player2.update(this.keysP2);
@@ -129,28 +139,104 @@ export default class GameScene extends Phaser.Scene {
   }
 
   checkWinner() {
+    if (this.timerEvent) this.timerEvent.remove();
     if (this.gameOver) return;
     this.gameOver = true;
+    this.physics.pause();
+
+    let winner = this.player1.hp > this.player2.hp ? "P1" : "P2";
+    if (winner === "P1") this.p1Score++;
+    else this.p2Score++;
 
     this.p1Surrender.setVisible(false);
     this.p2Surrender.setVisible(false);
 
-    this.physics.pause();
+    if (this.p1Score >= this.needsWins || this.p2Score >= this.needsWins) {
+      this.add
+        .text(400, 300, `${winner} REMPORTE LE MATCH !`, {
+          fontSize: "60px",
+          fill: "#0f0",
+          fontStyle: "bold",
+        })
+        .setOrigin(0.5);
 
-    let winnerText = "";
-    if (this.player1.hp > this.player2.hp) winnerText = "P1 GAGNE !";
-    else if (this.player2.hp > this.player1.hp) winnerText = "P2 GAGNE !";
-    else winnerText = "MATCH NUL";
+      this.add
+        .text(400, 400, "Appuyez sur R pour rejouer", { fontSize: "20px" })
+        .setOrigin(0.5);
 
-    this.add
-      .text(400, 300, winnerText, { fontSize: "80px", fill: "#f00" })
+      this.input.keyboard.once("keydown-R", () => {
+        this.scene.restart();
+      });
+    } else {
+      let roundTxt = this.add
+        .text(400, 200, `ROUND POUR ${winner}`, {
+          fontSize: "40px",
+          backgroundColor: "#000",
+          padding: 10,
+        })
+        .setOrigin(0.5);
+
+      this.time.delayedCall(2000, () => {
+        roundTxt.destroy();
+        this.startNewRound();
+      });
+    }
+  }
+
+  startNewRound() {
+    this.physics.resume();
+    this.gameOver = false;
+    this.isPaused = true;
+    this.timeLeft = 99;
+
+    this.player1.setPosition(150, 450).clearTint().setTint(0x3333ff);
+    this.player2.setPosition(650, 450).clearTint().setTint(0xff3333);
+    this.player1.hp = gameConfig.maxHp;
+    this.player2.hp = gameConfig.maxHp;
+
+    let introText = this.add
+      .text(400, 300, "", { fontSize: "80px", fontStyle: "bold" })
       .setOrigin(0.5);
-    this.add
-      .text(400, 400, "Appuyez sur R pour rejouer", { fontSize: "20px" })
-      .setOrigin(0.5);
 
-    this.input.keyboard.once("keydown-R", () => {
-      this.scene.restart();
+    let steps = ["3", "2", "1", "FIGHT !"];
+
+    steps.forEach((val, i) => {
+      this.startTimer();
+      this.time.delayedCall(i * 1000, () => {
+        introText.setText(val);
+        if (val === "FIGHT !") {
+          this.isPaused = false;
+          this.time.delayedCall(500, () => introText.destroy());
+        }
+      });
+    });
+  }
+
+  setupMatch(rounds, t, b3, b5) {
+    this.timerText.setVisible(true);
+    this.p1Surrender.setVisible(true);
+    this.p2Surrender.setVisible(true);
+    this.maxRounds = rounds;
+    this.needsWins = Math.ceil(rounds / 2);
+    t.destroy();
+    b3.destroy();
+    b5.destroy();
+    this.startNewRound();
+  }
+
+  startTimer() {
+    this.timerEvent = this.time.addEvent({
+      delay: 1000,
+      callback: () => {
+        if (this.timeLeft > 0 && !this.gameOver) {
+          this.timeLeft--;
+          this.timerText.setText(this.timeLeft);
+        } else if (this.timeLeft === 0) {
+          this.checkWinner();
+        }
+      },
+      callbackScope: this,
+      loop: true,
     });
   }
 }

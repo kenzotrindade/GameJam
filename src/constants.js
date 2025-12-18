@@ -20,4 +20,7 @@ export const gameConfig = {
   knockbackX: 400,
   knockbackY: -200,
   hitstuntDuration: 300,
+
+  roundDuration: 99,
+  introDelay: 1000,
 };
