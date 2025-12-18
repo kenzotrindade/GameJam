@@ -1,6 +1,5 @@
 import Phaser from "phaser";
-
-// import { GameScene } from './scenes/GameScene';
+import GameScene from "./scenes/GameScene.js";
 
 const config = {
   type: Phaser.AUTO,
@@ -15,19 +14,7 @@ const config = {
       debug: true,
     },
   },
-  scene: {
-    preload: preload,
-    create: create,
-  },
+  scene: [GameScene],
 };
-
-function preload() {
-  this.load.image("sky", "https://labs.phaser.io/assets/skies/space3.png");
-}
-
-function create() {
-  this.add.image(640, 360, "sky");
-  this.add.text(10, 10, "Mode Combat : Initialisé", { fill: "#0f0" });
-}
 
 new Phaser.Game(config);
