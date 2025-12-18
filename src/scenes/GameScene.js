@@ -210,7 +210,6 @@ export default class GameScene extends Phaser.Scene {
       right: Phaser.Input.Keyboard.KeyCodes.RIGHT,
       lowattack: Phaser.Input.Keyboard.KeyCodes.W,
       midattack: Phaser.Input.Keyboard.KeyCodes.X,
-      heavyattack: Phaser.Input.Keyboard.KeyCodes.C,
       dash: Phaser.Input.Keyboard.KeyCodes.ENTER,
     });
 
@@ -221,7 +220,6 @@ export default class GameScene extends Phaser.Scene {
       right: Phaser.Input.Keyboard.KeyCodes.D,
       lowattack: Phaser.Input.Keyboard.KeyCodes.U,
       midattack: Phaser.Input.Keyboard.KeyCodes.I,
-      heavyattack: Phaser.Input.Keyboard.KeyCodes.O,
       dash: Phaser.Input.Keyboard.KeyCodes.SPACE,
     });
 
