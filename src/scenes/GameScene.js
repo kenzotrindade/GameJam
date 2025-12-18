@@ -15,59 +15,57 @@ export default class GameScene extends Phaser.Scene {
 
   preload() {
     this.load.image("fond", "img/1125239.jpg");
-
-    // --- CHARGEMENT DES SPRITES ---
-    // On spécifie la taille standard 200x200.
-    // Si ça affiche encore un carré noir, c'est que tes images ne font pas 200px de haut.
-    // Ouvre tes images sur ton ordi pour vérifier leur taille (ex: 1600x200).
     const frameConfig = { frameWidth: 200, frameHeight: 200 };
 
-    this.load.spritesheet(
-      "samurai_idle",
-      "img/EmeraldProtector/Idle.png",
-      frameConfig
-    );
-    this.load.spritesheet(
-      "samurai_run",
-      "img/EmeraldProtector/Run.png",
-      frameConfig
-    );
-    this.load.spritesheet(
-      "samurai_jump",
-      "img/EmeraldProtector/Jump.png",
-      frameConfig
-    );
-    this.load.spritesheet(
-      "samurai_fall",
-      "img/EmeraldProtector/Fall.png",
-      frameConfig
-    );
+    // Fonction pour charger un dossier entier d'un coup
+    const loadCharacter = (prefix, folderName) => {
+      this.load.spritesheet(
+        `${prefix}_idle`,
+        `img/${folderName}/Idle.png`,
+        frameConfig
+      );
+      this.load.spritesheet(
+        `${prefix}_run`,
+        `img/${folderName}/Run.png`,
+        frameConfig
+      );
+      this.load.spritesheet(
+        `${prefix}_jump`,
+        `img/${folderName}/Jump.png`,
+        frameConfig
+      );
+      this.load.spritesheet(
+        `${prefix}_fall`,
+        `img/${folderName}/Fall.png`,
+        frameConfig
+      );
+      this.load.spritesheet(
+        `${prefix}_attack1`,
+        `img/${folderName}/Attack1.png`,
+        frameConfig
+      );
+      this.load.spritesheet(
+        `${prefix}_attack2`,
+        `img/${folderName}/Attack2.png`,
+        frameConfig
+      );
+      this.load.spritesheet(
+        `${prefix}_hit`,
+        `img/${folderName}/Take Hit.png`,
+        frameConfig
+      ); // Attention espace
+      this.load.spritesheet(
+        `${prefix}_death`,
+        `img/${folderName}/Death.png`,
+        frameConfig
+      );
+    };
 
-    // ATTENTION : Attack1 a 6 frames, Attack2 a 6 frames
-    this.load.spritesheet(
-      "samurai_attack1",
-      "img/EmeraldProtector/Attack1.png",
-      frameConfig
-    );
-    this.load.spritesheet(
-      "samurai_attack2",
-      "img/EmeraldProtector/Attack2.png",
-      frameConfig
-    );
+    // 1. On charge P1 (Le Rouge)
+    loadCharacter("red", "RedProtector");
 
-    // Take Hit a 4 frames
-    this.load.spritesheet(
-      "samurai_hit",
-      "img/EmeraldProtector/Take Hit.png",
-      frameConfig
-    );
-
-    // Death a 6 frames
-    this.load.spritesheet(
-      "samurai_death",
-      "img/EmeraldProtector/Death.png",
-      frameConfig
-    );
+    // 2. On charge P2 (Le Vert)
+    loadCharacter("emerald", "EmeraldProtector");
 
     // ... tes particules ...
     const graphics = this.make.graphics({ x: 0, y: 0, add: false });
@@ -84,123 +82,93 @@ export default class GameScene extends Phaser.Scene {
   create() {
     const { width, height } = this.scale;
 
-    // --- 1. FOND & PARTICULES ---
+    // --- 1. DÉCOR ---
     this.add.image(width / 2, height / 2, "fond").setDisplaySize(width, height);
+    // ... tes particules petal et hitParticles (copie-colle ton code existant ici) ...
+    // ... code particules ...
 
-    // Pétales d'ambiance
-    this.add.particles(0, 0, "petal", {
-      x: { min: 0, max: width },
-      y: -10,
-      lifespan: 6000,
-      speedY: { min: 40, max: 100 },
-      speedX: { min: -20, max: 50 },
-      scale: { start: 0.8, end: 0.4 },
-      gravityY: 20,
-      frequency: 150,
-    });
+    // --- 2. CRÉATION DES ANIMATIONS (AUTO) ---
+    // Cette fonction crée toutes les anims pour une couleur donnée (red ou emerald)
+    const createAnimsFor = (prefix) => {
+      this.anims.create({
+        key: `${prefix}_idle`,
+        frames: this.anims.generateFrameNumbers(`${prefix}_idle`, {
+          start: 0,
+          end: 7,
+        }),
+        frameRate: 8,
+        repeat: -1,
+      });
+      this.anims.create({
+        key: `${prefix}_run`,
+        frames: this.anims.generateFrameNumbers(`${prefix}_run`, {
+          start: 0,
+          end: 7,
+        }),
+        frameRate: 10,
+        repeat: -1,
+      });
+      this.anims.create({
+        key: `${prefix}_jump`,
+        frames: this.anims.generateFrameNumbers(`${prefix}_jump`, {
+          start: 0,
+          end: 1,
+        }),
+        frameRate: 2,
+        repeat: -1,
+      });
+      this.anims.create({
+        key: `${prefix}_fall`,
+        frames: this.anims.generateFrameNumbers(`${prefix}_fall`, {
+          start: 0,
+          end: 1,
+        }),
+        frameRate: 2,
+        repeat: -1,
+      });
+      this.anims.create({
+        key: `${prefix}_attack1`,
+        frames: this.anims.generateFrameNumbers(`${prefix}_attack1`, {
+          start: 0,
+          end: 5,
+        }),
+        frameRate: 15,
+        repeat: 0,
+      });
+      this.anims.create({
+        key: `${prefix}_attack2`,
+        frames: this.anims.generateFrameNumbers(`${prefix}_attack2`, {
+          start: 0,
+          end: 5,
+        }),
+        frameRate: 15,
+        repeat: 0,
+      });
+      this.anims.create({
+        key: `${prefix}_hit`,
+        frames: this.anims.generateFrameNumbers(`${prefix}_hit`, {
+          start: 0,
+          end: 3,
+        }),
+        frameRate: 10,
+        repeat: 0,
+      });
+      this.anims.create({
+        key: `${prefix}_death`,
+        frames: this.anims.generateFrameNumbers(`${prefix}_death`, {
+          start: 0,
+          end: 5,
+        }),
+        frameRate: 10,
+        repeat: 0,
+      });
+    };
 
-    // Sang (impacts) - Profondeur 100 pour être devant les joueurs
-    this.hitParticles = this.add.particles(0, 0, "hit_particle", {
-      speed: { min: 50, max: 200 },
-      scale: { start: 1.5, end: 0 },
-      lifespan: 600,
-      gravityY: 500,
-      emitting: false,
-    });
-    this.hitParticles.setDepth(100);
+    // On génère les anims pour les deux !
+    createAnimsFor("red");
+    createAnimsFor("emerald");
 
-    // --- 2. CRÉATION DES ANIMATIONS (DÉTAILLÉES) ---
-    // On définit le début et la fin pour chaque fichier PNG spécifique
-
-    // Idle (8 frames : 0 à 7)
-    this.anims.create({
-      key: "samurai_idle",
-      frames: this.anims.generateFrameNumbers("samurai_idle", {
-        start: 0,
-        end: 7,
-      }),
-      frameRate: 8,
-      repeat: -1,
-    });
-
-    // Run (8 frames : 0 à 7)
-    this.anims.create({
-      key: "samurai_run",
-      frames: this.anims.generateFrameNumbers("samurai_run", {
-        start: 0,
-        end: 7,
-      }),
-      frameRate: 10,
-      repeat: -1,
-    });
-
-    // Jump (2 frames : 0 à 1)
-    this.anims.create({
-      key: "samurai_jump",
-      frames: this.anims.generateFrameNumbers("samurai_jump", {
-        start: 0,
-        end: 1,
-      }),
-      frameRate: 2,
-      repeat: -1,
-    });
-
-    // Fall (2 frames : 0 à 1)
-    this.anims.create({
-      key: "samurai_fall",
-      frames: this.anims.generateFrameNumbers("samurai_fall", {
-        start: 0,
-        end: 1,
-      }),
-      frameRate: 2,
-      repeat: -1,
-    });
-
-    // Attack 1 (6 frames : 0 à 5)
-    this.anims.create({
-      key: "samurai_attack1",
-      frames: this.anims.generateFrameNumbers("samurai_attack1", {
-        start: 0,
-        end: 5,
-      }),
-      frameRate: 15,
-      repeat: 0,
-    });
-
-    // Attack 2 (6 frames : 0 à 5)
-    this.anims.create({
-      key: "samurai_attack2",
-      frames: this.anims.generateFrameNumbers("samurai_attack2", {
-        start: 0,
-        end: 5,
-      }),
-      frameRate: 15,
-      repeat: 0,
-    });
-
-    // Take Hit (4 frames : 0 à 3)
-    this.anims.create({
-      key: "samurai_hit",
-      frames: this.anims.generateFrameNumbers("samurai_hit", {
-        start: 0,
-        end: 3,
-      }),
-      frameRate: 10,
-      repeat: 0,
-    });
-
-    // Death (6 frames : 0 à 5)
-    this.anims.create({
-      key: "samurai_death",
-      frames: this.anims.generateFrameNumbers("samurai_death", {
-        start: 0,
-        end: 5,
-      }),
-      frameRate: 10,
-      repeat: 0,
-    });
-
-    // --- 3. PHYSIQUE (SOL) ---
+    // --- 3. PHYSIQUE ---
     const platforms = this.physics.add.staticGroup();
     const ground = this.add.rectangle(
       width / 2,
@@ -212,10 +180,16 @@ export default class GameScene extends Phaser.Scene {
     this.physics.add.existing(ground, true);
     platforms.add(ground);
 
-    this.player1 = new Player(this, 250, height - 100, "samurai", null);
-    this.player2 = new Player(this, width - 250, height - 100, "samurai", null);
+    // --- 4. CRÉATION DES JOUEURS (LE MOMENT CLÉ) ---
 
-    // Collisions
+    // JOUEUR 1 : On lui donne la clé "red".
+    // On met 'null' en couleur car il est déjà rouge naturellement !
+    this.player1 = new Player(this, 250, height - 100, "red", null);
+
+    // JOUEUR 2 : On lui donne la clé "emerald".
+    // On met 'null' en couleur car il est déjà vert naturellement !
+    this.player2 = new Player(this, width - 250, height - 100, "emerald", null);
+
     this.physics.add.collider(this.player1, platforms);
     this.physics.add.collider(this.player2, platforms);
     this.physics.add.collider(this.player1, this.player2);
