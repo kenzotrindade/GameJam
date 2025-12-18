@@ -95,8 +95,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const hitbox = this.scene.add.rectangle(
       hitboxX,
       hitboxY,
-      40,
-      40,
+      100,
+      100,
       0xffffff,
       0
     );
