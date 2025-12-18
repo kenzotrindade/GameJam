@@ -110,7 +110,7 @@ export default class GameScene extends Phaser.Scene {
       .rectangle(width * 0.45 - 5, y, barWidth, barHeight, 0x333333)
       .setOrigin(1, 0.5);
     this.healthBar1 = this.add
-      .rectangle(width * 0.45 - 5, y, barWidth, barHeight, 0xffff00)
+      .rectangle(width * 0.45 - 5, y, barWidth, barHeight, 0x27f527)
       .setOrigin(1, 0.5)
       .setVisible(false);
     this.p1Name = this.add
@@ -129,7 +129,7 @@ export default class GameScene extends Phaser.Scene {
       .rectangle(width * 0.55 + 5, y, barWidth, barHeight, 0x333333)
       .setOrigin(0, 0.5);
     this.healthBar2 = this.add
-      .rectangle(width * 0.55 + 5, y, barWidth, barHeight, 0xffff00)
+      .rectangle(width * 0.55 + 5, y, barWidth, barHeight, 0x27f527)
       .setOrigin(0, 0.5)
       .setVisible(false);
     this.p2Name = this.add
@@ -252,8 +252,8 @@ export default class GameScene extends Phaser.Scene {
     const percentage = hp / gameConfig.maxHp;
     bar.width = percentage * 400;
     if (percentage < 0.25) bar.setFillStyle(0xff0000);
-    else if (percentage < 0.5) bar.setFillStyle(0xffa500);
-    else bar.setFillStyle(0xffff00);
+    else if (percentage < 0.5) bar.setFillStyle(0xffff00);
+    else bar.setFillStyle(0x27f527);
   }
 
   checkWinner() {
