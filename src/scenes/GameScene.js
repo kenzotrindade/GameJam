@@ -15,6 +15,7 @@ export default class GameScene extends Phaser.Scene {
   preload() {
     this.load.image("samurai_p1", "img/samourai.png");
     this.load.image("samurai_p2", "img/samourai2.png");
+    this.load.image("fond", "img/1125239.jpg");
 
     const graphics = this.make.graphics({ x: 0, y: 0, add: false });
     graphics.fillStyle(0xffb7c5, 1);
@@ -25,9 +26,10 @@ export default class GameScene extends Phaser.Scene {
   create() {
     const { width, height } = this.scale;
 
-    this.add.rectangle(width / 2, height / 2, width, height, 0xf7d29a);
+    this.add.image(width / 2, height / 2, "fond").setDisplaySize(width, height);
+    /*    this.add.rectangle(width / 2, height / 2, width, height, 0xf7d29a);
     this.add.circle(width / 2, height * 0.4, 150, 0xff4d4d);
-
+*/
     this.add.particles(0, 0, "petal", {
       x: { min: 0, max: width },
       y: -10,
@@ -51,11 +53,11 @@ export default class GameScene extends Phaser.Scene {
     this.physics.add.existing(ground, true);
     platforms.add(ground);
 
-    this.player1 = new Player(this, 250, height - 40, "samurai_p1", 0xff3333);
+    this.player1 = new Player(this, 250, height - 200, "samurai_p1", 0xff3333);
     this.player2 = new Player(
       this,
       width - 250,
-      height - 40,
+      height - 200,
       "samurai_p2",
       0x3333ff
     );
