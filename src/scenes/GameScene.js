@@ -208,9 +208,10 @@ export default class GameScene extends Phaser.Scene {
       left: Phaser.Input.Keyboard.KeyCodes.LEFT,
       down: Phaser.Input.Keyboard.KeyCodes.DOWN,
       right: Phaser.Input.Keyboard.KeyCodes.RIGHT,
-      lowattack: Phaser.Input.Keyboard.KeyCodes.C,
+      lowattack: Phaser.Input.Keyboard.KeyCodes.W,
       midattack: Phaser.Input.Keyboard.KeyCodes.X,
-      heavyattack: Phaser.Input.Keyboard.KeyCodes.W,
+      heavyattack: Phaser.Input.Keyboard.KeyCodes.C,
+      dash: Phaser.Input.Keyboard.KeyCodes.ENTER,
     });
 
     this.keysP2 = this.input.keyboard.addKeys({
@@ -221,6 +222,7 @@ export default class GameScene extends Phaser.Scene {
       lowattack: Phaser.Input.Keyboard.KeyCodes.U,
       midattack: Phaser.Input.Keyboard.KeyCodes.I,
       heavyattack: Phaser.Input.Keyboard.KeyCodes.O,
+      dash: Phaser.Input.Keyboard.KeyCodes.SPACE,
     });
 
     // --- 6. INTERFACE (UI) ---
@@ -269,7 +271,7 @@ export default class GameScene extends Phaser.Scene {
       .setOrigin(1, 0.5);
     // Barre P1
     this.healthBar1 = this.add
-      .rectangle(width * 0.3, y, barWidth, barHeight, 0xffff00)
+      .rectangle(width * 0.3, y, barWidth, barHeight, 0x27f527)
       .setOrigin(1, 0.5)
       .setVisible(false);
 
@@ -279,7 +281,7 @@ export default class GameScene extends Phaser.Scene {
       .setOrigin(0, 0.5);
     // Barre P2
     this.healthBar2 = this.add
-      .rectangle(width * 0.7, y, barWidth, barHeight, 0xffff00)
+      .rectangle(width * 0.7, y, barWidth, barHeight, 0x27f527)
       .setOrigin(0, 0.5)
       .setVisible(false);
   }
@@ -447,6 +449,14 @@ export default class GameScene extends Phaser.Scene {
     if (winner === "P1") this.player2.hp = 0;
     else this.player1.hp = 0;
     this.checkWinner();
+  }
+
+  updateHealthBar(bar, hp) {
+    const percentage = hp / gameConfig.maxHp;
+    bar.width = percentage * 400;
+    if (percentage < 0.25) bar.setFillStyle(0xff0000);
+    else if (percentage < 0.5) bar.setFillStyle(0xffff00);
+    else bar.setFillStyle(0x27f527);
   }
 
   checkWinner() {

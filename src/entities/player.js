@@ -8,6 +8,7 @@ const statePlayer = Object.freeze({
   block: 3,
   hitstun: 4,
   dead: 5,
+  dash: 6,
 });
 
 const dataAttack = {
@@ -45,9 +46,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setOrigin(0.5, 1);
     this.setCollideWorldBounds(true);
 
-    this.setScale(2.5);
-    this.body.setSize(70, 80);
-    this.body.setOffset(70, 75);
+    // --- SCALE & HITBOX (Sprites 200x200) ---
+    this.setScale(3.5);
+    this.body.setSize(26, 47);
+    this.body.setOffset(87, 75);
 
     this.baseColor = color;
     if (color) {
@@ -113,6 +115,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const walkSpeed = 300;
     const walkBackSpeed = 200;
 
+    if (Phaser.Input.Keyboard.JustDown(keys.dash) && !this.indash) {
+      this.indash = true;
+      let dash = 0;
+      if (keys.left.isDown) {
+        dash = this.x < opponent.x ? -walkBackSpeed * 3 : -walkSpeed * 3;
+      } else if (keys.right.isDown) {
+        dash = this.x > opponent.x ? walkBackSpeed * 3 : walkSpeed * 3;
+      }
+      if (dash !== 0) {
+        this.setVelocityX(dash);
+        this.scene.time.delayedCall(200, () => {});
+      }
+    }
+
     if (keys.left.isDown) {
       if (this.x < opponent.x) {
         this.setVelocityX(-walkBackSpeed);
@@ -134,7 +150,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     if (keys.up.isDown && isGrounded) {
-      this.setVelocityY(-800);
+      this.setVelocityY(-1500);
     }
   }
 
@@ -213,7 +229,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.hp -= amount;
 
     if (this.scene.hitParticles) {
-      this.scene.hitParticles.explode(15, this.x, this.y - 250);
+      this.scene.hitParticles.explode(15, this.x, this.y - 350);
     }
 
     if (this.hp <= 0) {
