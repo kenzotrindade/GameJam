@@ -19,7 +19,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     scene.physics.add.existing(this);
     this.setOrigin(0.5, 1);
     this.setCollideWorldBounds(true);
-    this.setScale(4);
+    this.setScale(5);
     this.baseColor = color;
     this.hp = gameConfig.maxHp;
     this.state = statePlayer.idle;
@@ -44,7 +44,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     const isGrounded = this.body.touching.down;
     this.setVelocityX(0);
-    this.setScale(4, 4);
+    this.setScale(5, 5);
     this.body.setSize(this.width, this.height);
     this.body.setOffset(0, 0);
 
@@ -58,7 +58,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const walkSpeed = 300;
     const walkBackSpeed = 200;
 
-    if (keys.left.isDown) {
+    if (keys.left.isDown && !keys.down.isDown) {
       if (this.x < opponent.x) {
         this.setVelocityX(-walkBackSpeed);
         this.state = statePlayer.block;
@@ -66,7 +66,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.setVelocityX(-walkSpeed);
         this.state = statePlayer.walk;
       }
-    } else if (keys.right.isDown) {
+    } else if (keys.right.isDown && !keys.down.isDown) {
       if (this.x > opponent.x) {
         this.setVelocityX(walkBackSpeed);
         this.state = statePlayer.block;
@@ -75,9 +75,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.state = statePlayer.walk;
       }
     } else if (keys.down.isDown && isGrounded) {
-      this.setScale(4, 3.5);
-      this.body.setSize(this.width, this.height / 2);
-      this.body.setOffset(0, this.height / 2);
+      this.setScale(5, 3.5);
+      if (keys.left.isDown || keys.right.isDown) {
+        this.state = statePlayer.block;
+      }
     } else {
       this.state = statePlayer.idle;
     }
@@ -98,17 +99,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const hitboxHalfWidth = boxWidth / 2;
     const offset = playerHalfWidth + hitboxHalfWidth;
     const hitboxX = this.x + offset * this.direction;
-    const hitboxY = this.y - this.height / 2;
+    const hitboxY = 500;
 
     const hitbox = this.scene.add.rectangle(
       hitboxX,
       hitboxY,
       boxWidth,
-      100,
+      50,
       0xffffff,
       0
     );
     this.scene.physics.add.existing(hitbox);
+    hitbox.body.setAllowGravity(false);
     const enemy =
       this === this.scene.player1 ? this.scene.player2 : this.scene.player1;
     if (enemy) {
@@ -121,7 +123,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
       });
     }
-    this.scene.time.delayedCall(300, () => {
+    this.scene.time.delayedCall(200, () => {
       hitbox.destroy();
       if (this.state !== statePlayer.dead) this.state = statePlayer.idle;
     });
