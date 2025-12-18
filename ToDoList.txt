@@ -50,3 +50,5 @@ Todo : toucher la hitbox des coups qui est un peut trop grosse a mon gout (oblig
 Todo : bien clip les hitbox des perso a leur pieds (obligatoire)
 Todo : remettre les particules de sangs (obligatoire)
 Todo : mettre un gros coups de dev a la main car full ia sur le sprite sheet pour tester, maintenant que fonctionnel : comprendre, réapproprier, et redev a la mano (obligatoire)
+
+Todo : essayer de coder le fait qu'on puisse jouer a la manette (optionnel)
