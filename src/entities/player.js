@@ -22,30 +22,34 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setScale(4);
 
     this.baseColor = color;
-
     this.hp = gameConfig.maxHp;
     this.state = statePlayer.idle;
     this.direction = 1;
+    this.clearTint();
   }
 
   update(keys, opponent) {
-    if (this.state === statePlayer.hitstun || this.state === statePlayer.dead) {
+    if (this.state === statePlayer.dead) {
+      this.setVelocityX(0);
+      this.setTint(0x333333);
+      return;
+    }
+
+    if (this.state !== statePlayer.hitstun) {
+      this.clearTint();
+    }
+
+    if (this.state === statePlayer.hitstun) {
       return;
     }
 
     const isGrounded = this.body.touching.down;
-
-    if (this.state !== statePlayer.attack) {
-      this.setVelocityX(0);
-    }
-
+    this.setVelocityX(0);
     this.setScale(4, 4);
     this.body.setSize(this.width, this.height);
     this.body.setOffset(0, 0);
 
-    if (this.state === statePlayer.attack) {
-      return;
-    }
+    if (this.state === statePlayer.attack) return;
 
     if (Phaser.Input.Keyboard.JustDown(keys.attack)) {
       this.executeAttack();
@@ -88,9 +92,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.state = statePlayer.attack;
     this.setVelocityX(0);
 
-    const hitboxX = this.x + 40 * this.direction;
-    const hitboxY = this.y - this.height / 2;
-
+    const hitboxX = this.x + 60 * this.direction;
+    const hitboxY = this.y - 60;
     const hitbox = this.scene.add.rectangle(
       hitboxX,
       hitboxY,
@@ -115,13 +118,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       });
     }
 
-    this.scene.time.delayedCall(1000, () => {
+    this.scene.time.delayedCall(300, () => {
       hitbox.destroy();
-
-      if (
-        this.state !== statePlayer.hitstun &&
-        this.state !== statePlayer.dead
-      ) {
+      if (this.state !== statePlayer.dead) {
         this.state = statePlayer.idle;
       }
     });
@@ -132,28 +131,29 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     if (this.state === statePlayer.block) {
       amount = Math.floor(amount * 0.2);
-      console.log("Bloqué !");
     }
 
     this.hp -= amount;
 
-    // Mort
     if (this.hp <= 0) {
       this.hp = 0;
       this.state = statePlayer.dead;
+      this.setTint(0x333333);
+      this.setVelocityX(0);
       return;
     }
 
     this.state = statePlayer.hitstun;
+    this.setTint(0xff8888);
 
     const knockbackDir = this.x < attackerX ? -1 : 1;
     this.setVelocityX(200 * knockbackDir);
     this.setVelocityY(-200);
 
-    this.scene.time.delayedCall(gameConfig.hitstuntDuration || 400, () => {
+    this.scene.time.delayedCall(500, () => {
       if (this.state !== statePlayer.dead) {
-        this.clearTint();
         this.state = statePlayer.idle;
+        this.clearTint();
       }
     });
   }
@@ -165,12 +165,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.state === statePlayer.attack
     )
       return;
-    if (this.x < opponent.x) {
-      this.setFlipX(false);
-      this.direction = 1;
-    } else {
-      this.setFlipX(true);
-      this.direction = -1;
-    }
+    this.setFlipX(this.x > opponent.x);
+    this.direction = this.x > opponent.x ? -1 : 1;
   }
 }

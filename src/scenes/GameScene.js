@@ -69,7 +69,7 @@ export default class GameScene extends Phaser.Scene {
     });
 
     this.timerText = this.add
-      .text(width / 2, 50, "99", {
+      .text(width / 2, 60, "99", {
         fontSize: "64px",
         fill: "#fff",
         fontStyle: "bold",
@@ -78,23 +78,23 @@ export default class GameScene extends Phaser.Scene {
       .setVisible(false);
 
     this.add
-      .rectangle(width * 0.3, 50, 305, 35, 0x000000, 0.5)
+      .rectangle(width * 0.35, 60, 305, 35, 0x000000, 0.5)
       .setOrigin(1, 0.5);
     this.healthBar1 = this.add
-      .rectangle(width * 0.3, 50, 300, 30, 0xffff00)
+      .rectangle(width * 0.35, 60, 300, 30, 0xffff00)
       .setOrigin(1, 0.5)
       .setVisible(false);
 
     this.add
-      .rectangle(width * 0.7, 50, 305, 35, 0x000000, 0.5)
+      .rectangle(width * 0.65, 60, 305, 35, 0x000000, 0.5)
       .setOrigin(0, 0.5);
     this.healthBar2 = this.add
-      .rectangle(width * 0.7, 50, 300, 30, 0xffff00)
+      .rectangle(width * 0.65, 60, 300, 30, 0xffff00)
       .setOrigin(0, 0.5)
       .setVisible(false);
 
     this.p1Surrender = this.add
-      .text(width * 0.3 - 300, 80, "ABANDON [P1]", {
+      .text(width * 0.35 - 300, 90, "ABANDON [P1]", {
         backgroundColor: "#900",
         padding: 5,
       })
@@ -103,7 +103,7 @@ export default class GameScene extends Phaser.Scene {
       .setVisible(false);
 
     this.p2Surrender = this.add
-      .text(width * 0.7 + 300, 80, "ABANDON [P2]", {
+      .text(width * 0.65 + 300, 90, "ABANDON [P2]", {
         backgroundColor: "#900",
         padding: 5,
       })
@@ -124,7 +124,6 @@ export default class GameScene extends Phaser.Scene {
     const { width, height } = this.scale;
     const centerX = width / 2;
     const centerY = height / 2;
-
     let txt = this.add
       .text(centerX, centerY - 100, "CHOISISSEZ LE FORMAT", {
         fontSize: "42px",
@@ -138,7 +137,6 @@ export default class GameScene extends Phaser.Scene {
       padding: { x: 20, y: 10 },
       fixedWidth: 200,
     };
-
     let btn3 = this.add
       .text(centerX - 120, centerY, "BO3", btnStyle)
       .setOrigin(0.5)
@@ -149,7 +147,6 @@ export default class GameScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true })
       .setAlign("center");
-
     btn3.on("pointerdown", () => this.setupMatch(3, txt, btn3, btn5));
     btn5.on("pointerdown", () => this.setupMatch(5, txt, btn3, btn5));
   }
@@ -174,8 +171,12 @@ export default class GameScene extends Phaser.Scene {
     this.isPaused = true;
     this.timeLeft = 99;
     this.timerText.setText("99").setColor("#fff");
-    this.player1.setPosition(250, 500).clearTint();
-    this.player2.setPosition(this.scale.width - 250, 500).clearTint();
+    this.player1
+      .setPosition(250, 500)
+      .setTint(this.player1.baseColor).state = 0;
+    this.player2
+      .setPosition(this.scale.width - 250, 500)
+      .setTint(this.player2.baseColor).state = 0;
     this.player1.hp = gameConfig.maxHp;
     this.player2.hp = gameConfig.maxHp;
 
@@ -220,10 +221,8 @@ export default class GameScene extends Phaser.Scene {
     this.player2.update(this.keysP2, this.player1);
     this.player1.updateFacing(this.player2);
     this.player2.updateFacing(this.player1);
-
     this.healthBar1.width = (this.player1.hp / gameConfig.maxHp) * 300;
     this.healthBar2.width = (this.player2.hp / gameConfig.maxHp) * 300;
-
     if (this.player1.hp <= 0 || this.player2.hp <= 0) this.checkWinner();
   }
 
@@ -266,22 +265,25 @@ export default class GameScene extends Phaser.Scene {
   }
 
   displayFinalVictory(winner) {
-    this.add.rectangle(
-      this.scale.width / 2,
-      this.scale.height / 2,
-      this.scale.width,
-      this.scale.height,
-      0x000000,
-      0.7
-    );
+    const { width, height } = this.scale;
+
+    this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.8);
+
     this.add
-      .text(
-        this.scale.width / 2,
-        this.scale.height / 2 - 50,
-        `${winner} GAGNE !`,
-        { fontSize: "60px", fill: "#0f0" }
-      )
+      .text(width / 2, height / 2 - 50, `${winner} GAGNE LE MATCH !`, {
+        fontSize: "60px",
+        fill: "#0f0",
+        fontStyle: "bold",
+      })
       .setOrigin(0.5);
+
+    this.add
+      .text(width / 2, height / 2 + 50, "APPUYEZ SUR [R] POUR RECOMMENCER", {
+        fontSize: "24px",
+        fill: "#fff",
+      })
+      .setOrigin(0.5);
+
     this.input.keyboard.once("keydown-R", () => {
       this.p1Score = 0;
       this.p2Score = 0;
