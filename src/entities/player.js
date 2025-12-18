@@ -13,44 +13,39 @@ const statePlayer = Object.freeze({
 export class Player extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y, texture, color) {
     super(scene, x, y, texture);
-
     scene.add.existing(this);
     scene.physics.add.existing(this);
-
-    this.setOrigin(0, 1);
+    this.setOrigin(0.5, 1);
     this.setCollideWorldBounds(true);
     this.setScale(4);
-
     this.baseColor = color;
-
     this.hp = gameConfig.maxHp;
     this.state = statePlayer.idle;
-    this.direction = 1;
-
-    this.lastclick = [null, null, null, null, null];
+    this.direction = x > scene.sys.game.config.width / 2 ? -1 : 1;
+    this.setFlipX(this.direction === -1);
+    this.clearTint();
   }
 
   update(keys, opponent) {
-    this.lastclick.shift();
-    this.lastclick.push(keys);
+    if (this.state === statePlayer.dead) {
+      this.setVelocityX(0);
+      this.setTint(0x333333);
+      return;
+    }
 
-    if (this.state === statePlayer.hitstun || this.state === statePlayer.dead) {
+    if (this.state !== statePlayer.hitstun) {
+      this.clearTint();
+    } else {
       return;
     }
 
     const isGrounded = this.body.touching.down;
-
-    if (this.state !== statePlayer.attack) {
-      this.setVelocityX(0);
-    }
-
+    this.setVelocityX(0);
     this.setScale(4, 4);
     this.body.setSize(this.width, this.height);
     this.body.setOffset(0, 0);
 
-    if (this.state === statePlayer.attack) {
-      return;
-    }
+    if (this.state === statePlayer.attack) return;
 
     if (Phaser.Input.Keyboard.JustDown(keys.attack)) {
       this.executeAttack();
@@ -96,23 +91,27 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   executeAttack() {
     this.state = statePlayer.attack;
     this.setVelocityX(0);
+    this.setTint(0xffff00);
 
-    const hitboxX = this.x + 40 * this.direction;
+    const boxWidth = 100;
+    const playerHalfWidth = this.displayWidth / 2;
+
+    const hitboxHalfWidth = boxWidth / 2;
+    const offset = playerHalfWidth + hitboxHalfWidth;
+    const hitboxX = this.x + offset * this.direction;
     const hitboxY = this.y - this.height / 2;
 
     const hitbox = this.scene.add.rectangle(
       hitboxX,
       hitboxY,
-      100,
+      boxWidth,
       100,
       0xffffff,
       0
     );
     this.scene.physics.add.existing(hitbox);
-
     const enemy =
       this === this.scene.player1 ? this.scene.player2 : this.scene.player1;
-
     if (enemy) {
       this.scene.physics.overlap(hitbox, enemy, () => {
         if (
@@ -123,46 +122,32 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
       });
     }
-
-    this.scene.time.delayedCall(1000, () => {
+    this.scene.time.delayedCall(300, () => {
       hitbox.destroy();
-
-      if (
-        this.state !== statePlayer.hitstun &&
-        this.state !== statePlayer.dead
-      ) {
-        this.state = statePlayer.idle;
-      }
+      if (this.state !== statePlayer.dead) this.state = statePlayer.idle;
     });
   }
 
   takeDamage(amount, attackerX) {
     if (this.state === statePlayer.dead) return;
-
-    if (this.state === statePlayer.block) {
-      amount = Math.floor(amount * 0.2);
-      console.log("Bloqué !");
-    }
-
+    if (this.state === statePlayer.block) amount = Math.floor(amount * 0.2);
     this.hp -= amount;
-
-    // Mort
     if (this.hp <= 0) {
       this.hp = 0;
       this.state = statePlayer.dead;
+      this.setTint(0x333333);
+      this.setVelocityX(0);
       return;
     }
-
     this.state = statePlayer.hitstun;
-
+    this.setTint(0xff8888);
     const knockbackDir = this.x < attackerX ? -1 : 1;
     this.setVelocityX(200 * knockbackDir);
     this.setVelocityY(-200);
-
-    this.scene.time.delayedCall(gameConfig.hitstuntDuration || 400, () => {
+    this.scene.time.delayedCall(500, () => {
       if (this.state !== statePlayer.dead) {
-        this.clearTint();
         this.state = statePlayer.idle;
+        this.clearTint();
       }
     });
   }
@@ -174,12 +159,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.state === statePlayer.attack
     )
       return;
-    if (this.x < opponent.x) {
-      this.setFlipX(false);
-      this.direction = 1;
-    } else {
-      this.setFlipX(true);
-      this.direction = -1;
-    }
+    this.setFlipX(this.x > opponent.x);
+    this.direction = this.x > opponent.x ? -1 : 1;
   }
 }
