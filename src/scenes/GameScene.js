@@ -13,38 +13,102 @@ export default class GameScene extends Phaser.Scene {
     this.timerEvent = null;
   }
 
-  create() {
-    const width = this.sys.game.config.width;
-    const height = this.sys.game.config.height;
+  preload() {
+    // On charge tes nouveaux fichiers
+    this.load.spritesheet(
+      "samurai_p1",
+      "img/EmeraldProtector/EmeraldProtector/Idle.png",
+      { frameWidth: 128, frameHeight: 128 }
+    );
+    this.load.spritesheet(
+      "samurai_p2",
+      "img/TheDarkRedOne/TheDarkRedOne/Idle.png",
+      { frameWidth: 128, frameHeight: 128 }
+    );
 
-    const graphics = this.make.graphics();
-    graphics.fillStyle(0xffffff, 1).fillRect(0, 0, 32, 32);
-    graphics.generateTexture("square", 32, 32);
-    graphics.destroy();
+    const ui = this.textures.createCanvas("ui_wood", 260, 40);
+    const uctx = ui.getContext();
+    uctx.fillStyle = "#3d2b1f";
+    uctx.fillRect(0, 0, 260, 40);
+    uctx.strokeStyle = "#d4af37";
+    uctx.lineWidth = 4;
+    uctx.strokeRect(4, 4, 252, 32);
+    ui.refresh();
+
+    const petal = this.textures.createCanvas("petal", 10, 10);
+    const pctx = petal.getContext();
+    pctx.fillStyle = "#ffb7c5";
+    pctx.beginPath();
+    pctx.arc(5, 5, 5, 0, Math.PI * 2);
+    pctx.fill();
+    petal.refresh();
+  }
+
+  create() {
+    const { width, height } = this.scale;
+    const sky = this.add.graphics();
+    sky.fillGradientStyle(0xfce4ec, 0xfce4ec, 0xffd1dc, 0xffd1dc, 1);
+    sky.fillRect(0, 0, width, height);
+
+    const fuji = this.add.graphics();
+    fuji.fillStyle(0x2c3e50, 0.8);
+    fuji.fillTriangle(
+      width / 2 - 350,
+      height,
+      width / 2,
+      120,
+      width / 2 + 350,
+      height
+    );
+    fuji.fillStyle(0xffffff, 1);
+    fuji.fillTriangle(width / 2 - 75, 265, width / 2, 120, width / 2 + 75, 265);
+
+    this.add.particles(0, 0, "petal", {
+      x: { min: 0, max: width },
+      y: -20,
+      lifespan: 7000,
+      speedY: { min: 30, max: 80 },
+      speedX: { min: -40, max: 40 },
+      rotate: { min: 0, max: 360 },
+      scale: { start: 1, end: 0.3 },
+      gravityY: 10,
+      quantity: 1,
+      frequency: 180,
+    });
 
     const platforms = this.physics.add.staticGroup();
     const ground = this.add.rectangle(
       width / 2,
-      height - 20,
+      height - 25,
       width,
-      40,
-      0x666666
+      50,
+      0x1a1a1a
     );
     this.physics.add.existing(ground, true);
-    ground.body.setSize(width, 40);
     platforms.add(ground);
 
-    this.player1 = new Player(this, 150, 450, "square", 0x3333ff);
-    this.player2 = new Player(this, 650, 450, "square", 0xff3333);
+    this.shadow1 = this.add.ellipse(0, 0, 50, 15, 0x000000, 0.2);
+    this.shadow2 = this.add.ellipse(0, 0, 50, 15, 0x000000, 0.2);
+
+    this.player1 = new Player(this, 200, 450, "samurai_p1", 0xffffff);
+    this.player2 = new Player(this, 600, 450, "samurai_p2", 0xffffff);
 
     this.physics.add.collider(this.player1, platforms);
     this.physics.add.collider(this.player2, platforms);
     this.physics.add.collider(this.player1, this.player2);
-
     this.physics.world.setBounds(0, 0, width, height);
-    this.player1.setCollideWorldBounds(true);
-    this.player2.setCollideWorldBounds(true);
 
+    this.setupKeys();
+    this.setupUI(width);
+    this.showMenu();
+
+    this.events.on("shutdown", () => {
+      if (this.timerEvent) this.timerEvent.remove();
+      this.input.keyboard.removeAllListeners();
+    });
+  }
+
+  setupKeys() {
     this.keysP1 = this.input.keyboard.addKeys({
       up: Phaser.Input.Keyboard.KeyCodes.UP,
       left: Phaser.Input.Keyboard.KeyCodes.LEFT,
@@ -52,7 +116,6 @@ export default class GameScene extends Phaser.Scene {
       right: Phaser.Input.Keyboard.KeyCodes.RIGHT,
       attack: Phaser.Input.Keyboard.KeyCodes.SPACE,
     });
-
     this.keysP2 = this.input.keyboard.addKeys({
       up: Phaser.Input.Keyboard.KeyCodes.Z,
       left: Phaser.Input.Keyboard.KeyCodes.Q,
@@ -60,108 +123,118 @@ export default class GameScene extends Phaser.Scene {
       right: Phaser.Input.Keyboard.KeyCodes.D,
       attack: Phaser.Input.Keyboard.KeyCodes.ENTER,
     });
+  }
 
+  setupUI(width) {
+    this.add.image(140, 50, "ui_wood").setScale(0.9);
+    this.add
+      .image(width - 140, 50, "ui_wood")
+      .setScale(0.9)
+      .setFlipX(true);
     this.healthBar1 = this.add
-      .rectangle(100, 30, 200, 20, 0xffff00)
+      .rectangle(35, 50, 210, 18, 0xe74c3c)
       .setOrigin(0, 0.5)
       .setVisible(false);
     this.healthBar2 = this.add
-      .rectangle(width - 100, 30, 200, 20, 0xffff00)
+      .rectangle(width - 35, 50, 210, 18, 0xe74c3c)
       .setOrigin(1, 0.5)
       .setVisible(false);
-
     this.timerText = this.add
-      .text(width / 2, 50, "99", { fontSize: "64px", fill: "#fff" })
+      .text(width / 2, 55, "99", {
+        fontSize: "55px",
+        fontFamily: "Georgia",
+        color: "#3d2b1f",
+        fontStyle: "bold",
+      })
       .setOrigin(0.5)
+      .setStroke("#d4af37", 4)
       .setVisible(false);
-    this.debugText = this.add.text(10, 10, "", {
-      fontSize: "16px",
-      fill: "#0f0",
-      backgroundColor: "#00000088",
-    });
 
     this.p1Surrender = this.add
-      .text(80, 80, "P1 ABANDON", { backgroundColor: "#f00", padding: 5 })
-      .setInteractive({ useHandCursor: true })
-      .on("pointerdown", () => {
-        this.handleManualWin("P2");
+      .text(80, 100, "SEPPUKU", {
+        fontSize: "14px",
+        backgroundColor: "#800",
+        padding: 5,
       })
+      .setInteractive()
+      .on("pointerdown", () => this.handleManualWin("P2"))
       .setVisible(false);
-
     this.p2Surrender = this.add
-      .text(width - 80, 80, "P2 ABANDON", {
-        backgroundColor: "#f00",
+      .text(width - 80, 100, "SEPPUKU", {
+        fontSize: "14px",
+        backgroundColor: "#800",
         padding: 5,
       })
       .setOrigin(1, 0.5)
-      .setInteractive({ useHandCursor: true })
-      .on("pointerdown", () => {
-        this.handleManualWin("P1");
-      })
+      .setInteractive()
+      .on("pointerdown", () => this.handleManualWin("P1"))
       .setVisible(false);
-
-    this.showMenu();
   }
 
   showMenu() {
-    const width = this.sys.game.config.width;
-    const height = this.sys.game.config.height;
-    let txt = this.add
-      .text(width / 2, 200, "Choisissez le format", { fontSize: "32px" })
+    const { width } = this.scale;
+    const bg = this.add
+      .rectangle(width / 2, 300, 450, 180, 0x3d2b1f, 0.9)
+      .setStrokeStyle(4, 0xd4af37);
+    const txt = this.add
+      .text(width / 2, 260, "VOIE DU BUSHIDO", {
+        fontSize: "35px",
+        color: "#d4af37",
+        fontFamily: "Georgia",
+      })
       .setOrigin(0.5);
-    let btn3 = this.add
-      .text(width / 2 - 100, 300, "[ BO3 ]", { fontSize: "40px", fill: "#0f0" })
+    const b3 = this.add
+      .text(width / 2 - 80, 330, "[ BO3 ]", { fontSize: "28px", color: "#fff" })
       .setInteractive();
-    let btn5 = this.add
-      .text(width / 2 + 100, 300, "[ BO5 ]", { fontSize: "40px", fill: "#0f0" })
+    const b5 = this.add
+      .text(width / 2 + 80, 330, "[ BO5 ]", { fontSize: "28px", color: "#fff" })
       .setInteractive();
 
-    btn3.on("pointerdown", () => this.setupMatch(3, txt, btn3, btn5));
-    btn5.on("pointerdown", () => this.setupMatch(5, txt, btn3, btn5));
-  }
-
-  setupMatch(rounds, t, b3, b5) {
-    this.maxRounds = rounds;
-    this.needsWins = Math.ceil(rounds / 2);
-    t.destroy();
-    b3.destroy();
-    b5.destroy();
-    this.healthBar1.setVisible(true);
-    this.healthBar2.setVisible(true);
-    this.timerText.setVisible(true);
-    this.p1Surrender.setVisible(true);
-    this.p2Surrender.setVisible(true);
-    this.startNewRound();
+    const start = (r) => {
+      this.maxRounds = r;
+      this.needsWins = Math.ceil(r / 2);
+      bg.destroy();
+      txt.destroy();
+      b3.destroy();
+      b5.destroy();
+      this.healthBar1.setVisible(true);
+      this.healthBar2.setVisible(true);
+      this.timerText.setVisible(true);
+      this.p1Surrender.setVisible(true);
+      this.p2Surrender.setVisible(true);
+      this.startNewRound();
+    };
+    b3.on("pointerdown", () => start(3));
+    b5.on("pointerdown", () => start(5));
   }
 
   startNewRound() {
+    if (this.timerEvent) this.timerEvent.remove();
     this.physics.resume();
     this.gameOver = false;
     this.isPaused = true;
     this.timeLeft = 99;
-    this.timerText.setText("99").setColor("#fff");
-
-    this.player1.setPosition(150, 450).clearTint().setTint(0x3333ff);
-    this.player2.setPosition(650, 450).clearTint().setTint(0xff3333);
+    this.timerText.setText("99");
+    this.player1.setPosition(200, 450);
+    this.player2.setPosition(600, 450);
     this.player1.hp = gameConfig.maxHp;
     this.player2.hp = gameConfig.maxHp;
-    this.player1.state = "IDLE";
-    this.player2.state = "IDLE";
-
-    let introText = this.add
-      .text(400, 300, "", { fontSize: "80px", fontStyle: "bold" })
+    this.player1.clearTint();
+    this.player1.setTint(this.player1.baseColor);
+    this.player2.clearTint();
+    this.player2.setTint(this.player2.baseColor);
+    let t = this.add
+      .text(400, 300, "HAJIME !", {
+        fontSize: "80px",
+        color: "#c0392b",
+        fontFamily: "Georgia",
+        fontStyle: "bold",
+      })
       .setOrigin(0.5);
-    let steps = ["3", "2", "1", "FIGHT !"];
-
-    steps.forEach((val, i) => {
-      this.time.delayedCall(i * 1000, () => {
-        introText.setText(val);
-        if (val === "FIGHT !") {
-          this.isPaused = false;
-          this.time.delayedCall(500, () => introText.destroy());
-          this.startTimer();
-        }
-      });
+    this.time.delayedCall(1000, () => {
+      t.destroy();
+      this.isPaused = false;
+      this.startTimer();
     });
   }
 
@@ -173,7 +246,6 @@ export default class GameScene extends Phaser.Scene {
         if (this.timeLeft > 0 && !this.gameOver) {
           this.timeLeft--;
           this.timerText.setText(this.timeLeft);
-          if (this.timeLeft <= 10) this.timerText.setColor("#f00");
         } else if (this.timeLeft === 0) {
           this.checkWinner();
         }
@@ -185,27 +257,15 @@ export default class GameScene extends Phaser.Scene {
 
   update() {
     if (this.gameOver || this.isPaused) return;
-
     this.player1.update(this.keysP1, this.player2);
     this.player2.update(this.keysP2, this.player1);
-
     this.player1.updateFacing(this.player2);
     this.player2.updateFacing(this.player1);
-
-    this.healthBar1.width = (this.player1.hp / gameConfig.maxHp) * 200;
-    this.healthBar2.width = (this.player2.hp / gameConfig.maxHp) * 200;
-
-    if (this.player1.hp <= 0 || this.player2.hp <= 0) {
-      this.checkWinner();
-    }
-
-    this.debugText.setText([
-      `SCORE: P1 [${this.p1Score}] - P2 [${this.p2Score}]`,
-      `P1 HP: ${Math.floor(this.player1.hp)} | P2 HP: ${Math.floor(
-        this.player2.hp
-      )}`,
-      `P1 State: ${this.player1.state} | P2 State: ${this.player2.state}`,
-    ]);
+    this.shadow1.setPosition(this.player1.x, this.player1.y);
+    this.shadow2.setPosition(this.player2.x, this.player2.y);
+    this.healthBar1.width = (this.player1.hp / gameConfig.maxHp) * 210;
+    this.healthBar2.width = (this.player2.hp / gameConfig.maxHp) * 210;
+    if (this.player1.hp <= 0 || this.player2.hp <= 0) this.checkWinner();
   }
 
   handleManualWin(winner) {
@@ -215,63 +275,36 @@ export default class GameScene extends Phaser.Scene {
   }
 
   checkWinner() {
-    if (this.timerEvent) this.timerEvent.remove();
     if (this.gameOver) return;
     this.gameOver = true;
+    if (this.timerEvent) this.timerEvent.remove();
     this.physics.pause();
-
-    let winner = "";
-    if (this.player1.hp > this.player2.hp) winner = "P1";
-    else if (this.player2.hp > this.player1.hp) winner = "P2";
-    else winner = "DRAW";
-
-    if (winner === "P1") this.p1Score++;
-    else if (winner === "P2") this.p2Score++;
-
-    this.p1Surrender.setVisible(false);
-    this.p2Surrender.setVisible(false);
-
+    let win = this.player1.hp > this.player2.hp ? "P1" : "P2";
+    if (win === "P1") this.p1Score++;
+    else this.p2Score++;
     if (this.p1Score >= this.needsWins || this.p2Score >= this.needsWins) {
-      this.displayFinalVictory(winner);
+      this.displayFinalVictory(win);
     } else {
-      this.displayRoundVictory(winner);
+      this.time.delayedCall(1500, () => this.startNewRound());
     }
   }
 
-  displayRoundVictory(winner) {
-    let msg = winner === "DRAW" ? "MATCH NUL !" : `ROUND POUR ${winner}`;
-    let roundTxt = this.add
-      .text(400, 200, msg, {
-        fontSize: "40px",
-        backgroundColor: "#000",
-        padding: 15,
+  displayFinalVictory(winner) {
+    const { width, height } = this.scale;
+    this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.8);
+    this.add
+      .text(width / 2, height / 2 - 50, `${winner} EST LE MAÎTRE`, {
+        fontSize: "50px",
+        color: "#d4af37",
+        fontFamily: "Georgia",
+      })
+      .setOrigin(0.5);
+    this.add
+      .text(width / 2, height / 2 + 50, "APPUYEZ SUR [R] POUR REJOUER", {
+        fontSize: "20px",
         color: "#fff",
       })
       .setOrigin(0.5);
-
-    this.time.delayedCall(2000, () => {
-      roundTxt.destroy();
-      this.startNewRound();
-    });
-  }
-
-  displayFinalVictory(winner) {
-    this.add.rectangle(400, 300, 800, 600, 0x000000, 0.7);
-    this.add
-      .text(400, 250, `${winner} GAGNE LE MATCH !`, {
-        fontSize: "60px",
-        fill: "#0f0",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5);
-
-    let retryBtn = this.add
-      .text(400, 400, "APPUYEZ SUR [R] POUR RECOMMENCER", {
-        fontSize: "24px",
-        fill: "#fff",
-      })
-      .setOrigin(0.5);
-
     this.input.keyboard.once("keydown-R", () => {
       this.p1Score = 0;
       this.p2Score = 0;
