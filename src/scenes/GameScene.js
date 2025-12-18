@@ -1,5 +1,5 @@
 import { gameConfig } from "../constants.js";
-import { Player } from "../entities/player.js";
+import { Player } from "../entities/playerperso.js";
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
@@ -47,7 +47,6 @@ export default class GameScene extends Phaser.Scene {
     this.physics.add.collider(this.player1, platforms);
     this.physics.add.collider(this.player2, platforms);
     this.physics.add.collider(this.player1, this.player2);
-    this.physics.add.collider(this.player, this.ground);
 
     this.physics.world.setBounds(0, 0, width, height);
 
@@ -111,8 +110,8 @@ export default class GameScene extends Phaser.Scene {
   update() {
     if (this.gameOver) return;
 
-    if (this.player1) this.player1.update(this.cursors);
-    if (this.player2) this.player2.update(this.keysP2);
+    if (this.player1) this.player1.update(this.cursors, this.player2);
+    if (this.player2) this.player2.update(this.keysP2, this.player1);
 
     this.player1.updateFacing(this.player2);
     this.player2.updateFacing(this.player1);

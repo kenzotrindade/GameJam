@@ -7,6 +7,7 @@ const statePlayer = Object.freeze({
   attack: 2,
   block: 3,
   hitstun: 4,
+  fly: 5,
 });
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
@@ -43,6 +44,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if (this.state !== statePlayer.attack) this.state = statePlayer.block;
       } else if (this.x > opponent.x) {
         this.setVelocityX(-walkSpeed);
+        if (this.state !== statePlayer.attack) this.state = statePlayer.walk;
       }
     } else if (keys.right.isDown) {
       if (this.x > opponent.x) {
@@ -50,7 +52,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if (this.state !== statePlayer.attack) this.state = statePlayer.block;
       } else if (this.x < opponent.x) {
         this.setVelocityX(walkSpeed);
-        if (this.state !== statePlayer.attack) this.state = statePlayer.block;
+        if (this.state !== statePlayer.attack) this.state = statePlayer.walk;
       }
     } else if (keys.down.isDown) {
       this.setScale(1, 0.5);
