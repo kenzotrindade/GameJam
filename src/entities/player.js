@@ -9,13 +9,36 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     scene.physics.add.existing(this);
 
     this.setCollideWorldBounds(true);
-    this.setTint(color);
+    this.baseColor = color;
+    this.setTint(this.baseColor);
 
     this.hp = gameConfig.maxHp;
     this.state = "IDLE";
     this.isAttacking = false;
     this.isBlocking = false;
     this.direction = 1;
+  }
+
+  update(keys) {
+    if (this.state === "HURT" || this.state === "DEAD") return;
+
+    this.setVelocityX(0);
+
+    const speed = 160;
+
+    if (keys.left.isDown) {
+      this.setVelocityX(-speed);
+      if (this.state !== "ATTACK") this.state = "WALK";
+    } else if (keys.right.isDown) {
+      this.setVelocityX(speed);
+      if (this.state !== "ATTACK") this.state = "WALK";
+    } else {
+      if (this.state !== "ATTACK") this.state = "IDLE";
+    }
+
+    if (keys.up.isDown && this.body.touching.down) {
+      this.setVelocityY(-330);
+    }
   }
 
   takeDamage(amount, attackerX) {
@@ -44,7 +67,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     this.scene.time.delayedCall(gameConfig.hitstuntDuration, () => {
       this.clearTint();
-      this.setTint(this.tint);
+      this.setTint(this.baseColor);
 
       if (this.state !== "DEAD") {
         this.state = "IDLE";
