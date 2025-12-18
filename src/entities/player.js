@@ -8,6 +8,8 @@ const statePlayer = Object.freeze({
   block: 3,
   hitstun: 4,
   dead: 5,
+  dash: 6,
+  jump: 7,
 });
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
@@ -24,6 +26,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.direction = x > scene.sys.game.config.width / 2 ? -1 : 1;
     this.setFlipX(this.direction === -1);
     this.clearTint();
+    this.lastclick = [null, null, null, null, null];
   }
 
   update(keys, opponent) {
@@ -57,12 +60,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     if (keys.left.isDown) {
       if (this.x < opponent.x) {
-        if (this.lastclick.includes(key)) {
-          this.setVelocityX(-1000);
-        } else {
-          this.setVelocityX(-walkBackSpeed);
-          this.state = statePlayer.block;
-        }
+        this.setVelocityX(-walkBackSpeed);
+        this.state = statePlayer.block;
       } else {
         this.setVelocityX(-walkSpeed);
         this.state = statePlayer.walk;
