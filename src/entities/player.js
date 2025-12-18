@@ -22,7 +22,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setScale(4);
 
     this.baseColor = color;
-    this.setTint(this.baseColor);
 
     this.hp = gameConfig.maxHp;
     this.state = statePlayer.idle;
@@ -40,7 +39,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.setVelocityX(0);
     }
 
-    this.setScale(1, 1);
+    this.setScale(4, 4);
     this.body.setSize(this.width, this.height);
     this.body.setOffset(0, 0);
 
@@ -73,7 +72,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.state = statePlayer.walk;
       }
     } else if (keys.down.isDown && isGrounded) {
-      this.setScale(1, 0.5);
+      this.setScale(4, 3.5);
       this.body.setSize(this.width, this.height / 2);
       this.body.setOffset(0, this.height / 2);
     } else {
@@ -96,8 +95,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const hitbox = this.scene.add.rectangle(
       hitboxX,
       hitboxY,
-      40,
-      40,
+      100,
+      100,
       0xffffff,
       0
     );
@@ -144,12 +143,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.hp <= 0) {
       this.hp = 0;
       this.state = statePlayer.dead;
-      this.setTint(0x000000);
       return;
     }
 
     this.state = statePlayer.hitstun;
-    this.setTint(0xff0000);
 
     const knockbackDir = this.x < attackerX ? -1 : 1;
     this.setVelocityX(200 * knockbackDir);
@@ -158,7 +155,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.time.delayedCall(gameConfig.hitstuntDuration || 400, () => {
       if (this.state !== statePlayer.dead) {
         this.clearTint();
-        this.setTint(this.baseColor);
         this.state = statePlayer.idle;
       }
     });
