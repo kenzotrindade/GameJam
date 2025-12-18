@@ -8,8 +8,6 @@ const statePlayer = Object.freeze({
   block: 3,
   hitstun: 4,
   dead: 5,
-  dash: 6,
-  jump: 7,
 });
 
 const dataAttack = {
@@ -40,14 +38,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     scene.physics.add.existing(this);
     this.setOrigin(0.5, 1);
     this.setCollideWorldBounds(true);
-    this.setScale(5);
+    this.setScale(4);
     this.baseColor = color;
     this.hp = gameConfig.maxHp;
     this.state = statePlayer.idle;
     this.direction = x > scene.sys.game.config.width / 2 ? -1 : 1;
     this.setFlipX(this.direction === -1);
     this.clearTint();
-    this.lastclick = [null, null, null, null, null];
   }
 
   update(keys, opponent) {
@@ -63,18 +60,28 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
+    if (this.state === statePlayer.attack) {
+      return;
+    }
+
     const isGrounded = this.body.touching.down;
     this.setVelocityX(0);
-    this.setScale(5, 5);
+    this.setScale(4, 4);
     this.body.setSize(this.width, this.height);
     this.body.setOffset(0, 0);
 
     if (this.state === statePlayer.attack) return;
 
-    /*if (Phaser.Input.Keyboard.JustDown(keys.attack)) {
-      this.executeAttack();
+    if (Phaser.Input.Keyboard.JustDown(keys.lowattack)) {
+      this.executeAttack("low");
       return;
-    }*/
+    } else if (Phaser.Input.Keyboard.JustDown(keys.midattack)) {
+      this.executeAttack("mid");
+      return;
+    } else if (Phaser.Input.Keyboard.JustDown(keys.heavyattack)) {
+      this.executeAttack("heavy");
+      return;
+    }
 
     if (Phaser.Input.Keyboard.JustDown(keys.lowattack)) {
       this.executeAttack("low");
@@ -90,7 +97,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const walkSpeed = 300;
     const walkBackSpeed = 200;
 
-    if (keys.left.isDown && !keys.down.isDown) {
+    if (keys.left.isDown) {
       if (this.x < opponent.x) {
         this.setVelocityX(-walkBackSpeed);
         this.state = statePlayer.block;
@@ -98,7 +105,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.setVelocityX(-walkSpeed);
         this.state = statePlayer.walk;
       }
-    } else if (keys.right.isDown && !keys.down.isDown) {
+    } else if (keys.right.isDown) {
       if (this.x > opponent.x) {
         this.setVelocityX(walkBackSpeed);
         this.state = statePlayer.block;
@@ -107,10 +114,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.state = statePlayer.walk;
       }
     } else if (keys.down.isDown && isGrounded) {
-      this.setScale(5, 3.5);
-      if (keys.left.isDown || keys.right.isDown) {
-        this.state = statePlayer.block;
-      }
+      this.setScale(4, 3.5);
+      this.body.setSize(this.width, this.height / 2);
+      this.body.setOffset(0, this.height / 2);
     } else {
       this.state = statePlayer.idle;
     }
