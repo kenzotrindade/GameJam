@@ -1,0 +1,35 @@
+<?php
+
+
+
+?>
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="assets/styles/css/style.css">
+    <title>project-name</title>
+</head>
+<body>
+    <header>
+        <nav>
+            <input type="checkbox" id="menu-toggle">
+            <label for="menu-toggle" class="bruger">
+                <i class="fa-solid fa-bars"></i>
+            </label>
+            <a href="index.php?route=home" id="accueil">Accueil</a>
+            <a href="index.php?route=register" id="register">S'inscrire</a>
+            <a href="index.php?route=login" id="login">Se connecter</a>
+        </nav>
+    </header>
+    <?php
+        if (isset($route)) {
+            require "templates/$route.phtml";
+        } else {
+            require "templates/notFound.phtml";
+        }
+    ?>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<?php
+
+require "config/user.php";
+$user = null;
+
+if (isset($_POST["username"]) && isset($_POST["email"]) && isset($_POST["password"])) {
+    $user = new User();
+    if ($user->register($_POST["username"], $_POST["email"], $_POST["password"])) {
+        echo 
+        "<div class='alert alert-success' role='alert'> User registered </div>";
+    } else {
+        echo
+        "<div class='alert alert-danger' role='alert'> User registration error </div>";
+    }
+}
+
+?>
+
+<main>
+    <h1>Inscription</h1>
+    <?php if ($user && $user->getErrorEmail()) { ?>
+        <p> <?= $user->getErrorEmail() ?> </p>
+    <?php } ?>
+    <form method="POST">
+        <div>
+            <label for ="username">Nom :</label>
+            <input type="text" id="username" name="username">
+        </div>
+        <div>
+            <label for="email">Email :</label>
+            <input type="email" id="email" name="email">
+        </div>
+        <div>
+            <label for="password">Mot de Passe :</label>
+            <input type="password" id="password" name="password">
+        </div>
+        <button type="submit">
+            S'inscrire
+        </button>
+    </form>
+</main>

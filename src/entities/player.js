@@ -25,6 +25,13 @@ const dataAttack = {
     duration: 600,
     animSuffix: "_attack2",
   },
+  heavy: {
+    damage: 15,
+    range: 320,
+    // Grosse attaque = Gros temps de blocage (900ms)
+    duration: 900,
+    animSuffix: "_attack2",
+  },
 };
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
