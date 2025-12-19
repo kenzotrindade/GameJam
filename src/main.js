@@ -1,4 +1,4 @@
-import Phaser from "phaser";
+import Phaser, { Input } from "phaser";
 import GameScene from "./scenes/GameScene.js";
 
 const config = {
@@ -13,6 +13,10 @@ const config = {
     autoCenter: Phaser.Scale.CENTER_BOTH,
     width: 1280,
     height: 720,
+  },
+
+  input: {
+    gamepad: true,
   },
   // -------------------------------
 

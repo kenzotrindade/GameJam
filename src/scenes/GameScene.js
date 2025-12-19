@@ -11,6 +11,9 @@ export default class GameScene extends Phaser.Scene {
     this.isPaused = true;
     this.gameOver = false;
     this.timerEvent = null;
+
+    this.pad1 = null;
+    this.pad2 = null;
   }
 
   preload() {
@@ -81,6 +84,17 @@ export default class GameScene extends Phaser.Scene {
 
   create() {
     const { width, height } = this.scale;
+
+    this.input.gamepad.once("connected", (pad) => {
+      this.pad1 = pad;
+      console.log("Pad 1 connecté");
+    });
+    this.input.gamepad.on("connected", (pad) => {
+      if (this.pad1 && pad.index !== this.pad1.index) {
+        this.pad2 = pad;
+        console.log("Pad 2 connecté");
+      }
+    });
 
     // --- 1. DÉCOR ---
     this.add.image(width / 2, height / 2, "fond").setDisplaySize(width, height);
@@ -428,8 +442,8 @@ export default class GameScene extends Phaser.Scene {
     if (this.gameOver || this.isPaused) return;
 
     // Mise à jour des joueurs
-    this.player1.update(this.keysP1, this.player2);
-    this.player2.update(this.keysP2, this.player1);
+    this.player1.update(this.keysP1, this.player2, this.pad1);
+    this.player2.update(this.keysP2, this.player1, this.pad2);
 
     // Orientation (Flip)
     this.player1.updateFacing(this.player2);
