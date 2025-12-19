@@ -27,6 +27,59 @@ export default class GameScene extends Phaser.Scene {
       yellow: "YellowProtector",
       purple: "PurpleProtector",
     };
+    this.load.audio("ko_sound", "audio/ko.mp3");
+
+    for (let i = 1; i <= 3; i++) {
+      this.load.audio(`katana_${i}`, `audio/katana${i}.mp3`);
+    }
+
+    for (let i = 1; i <= 5; i++) {
+      this.load.audio(`round_${i}`, `audio/round${i}.mp3`);
+    }
+
+    // Fonction pour charger un dossier entier d'un coup
+    const loadCharacter = (prefix, folderName) => {
+      this.load.spritesheet(
+        `${prefix}_idle`,
+        `img/${folderName}/Idle.png`,
+        frameConfig
+      );
+      this.load.spritesheet(
+        `${prefix}_run`,
+        `img/${folderName}/Run.png`,
+        frameConfig
+      );
+      this.load.spritesheet(
+        `${prefix}_jump`,
+        `img/${folderName}/Jump.png`,
+        frameConfig
+      );
+      this.load.spritesheet(
+        `${prefix}_fall`,
+        `img/${folderName}/Fall.png`,
+        frameConfig
+      );
+      this.load.spritesheet(
+        `${prefix}_attack1`,
+        `img/${folderName}/Attack1.png`,
+        frameConfig
+      );
+      this.load.spritesheet(
+        `${prefix}_attack2`,
+        `img/${folderName}/Attack2.png`,
+        frameConfig
+      );
+      this.load.spritesheet(
+        `${prefix}_hit`,
+        `img/${folderName}/Take Hit.png`,
+        frameConfig
+      ); // Attention espace
+      this.load.spritesheet(
+        `${prefix}_death`,
+        `img/${folderName}/Death.png`,
+        frameConfig
+      );
+    };
 
     colors.forEach((color) => {
       const folder = folders[color];
@@ -82,22 +135,38 @@ export default class GameScene extends Phaser.Scene {
 
     const impactGraphics = this.make.graphics({ x: 0, y: 0, add: false });
     impactGraphics.fillStyle(0xff0000, 1);
-    impactGraphics.fillRect(0, 0, 4, 4);
-    impactGraphics.generateTexture("hit_particle", 4, 4);
+    impactGraphics.fillRect(0, 0, 6, 6);
+    impactGraphics.generateTexture("hit_particle", 6, 6);
   }
 
   create() {
     const { width, height } = this.scale;
 
+    this.koSound = this.sound.add("ko_sound");
+
+    this.katanaSounds = {
+      low: this.sound.add("katana_1"),
+      mid: this.sound.add("katana_2"),
+      heavy: this.sound.add("katana_3"),
+    };
+
+    this.roundSounds = {};
+    for (let i = 1; i <= 5; i++) {
+      this.roundSounds[i] = this.sound.add(`round_${i}`);
+    }
+
+    // --- 1. DÉCOR ---
     this.add.image(width / 2, height / 2, "fond").setDisplaySize(width, height);
+
     this.hitParticles = this.add.particles(0, 0, "hit_particle", {
-      speed: { min: 50, max: 200 },
-      angle: { min: 0, max: 360 },
+      speed: { min: 150, max: 400 },
       scale: { start: 1.5, end: 0 },
       lifespan: 600,
-      gravityY: 500,
+      gravityY: 1000,
+      alpha: { start: 1, end: 0 },
       emitting: false,
     });
+    this.hitParticles.setDepth(100);
 
     // MODIFICATION : Récupération des choix envoyés par main.js
     const p1Skin = this.registry.get("p1_skin") || "red";
@@ -364,6 +433,12 @@ export default class GameScene extends Phaser.Scene {
     this.timeLeft = 99;
     this.timerText.setText("99");
 
+    const currentRoundNumber = this.p1Score + this.p2Score + 1;
+
+    if (this.roundSounds[currentRoundNumber]) {
+      this.roundSounds[currentRoundNumber].play();
+    }
+
     // IMPORTANT: Reset complet des joueurs (Position + Animation + Stats)
     // On utilise la méthode resetPosition qu'on a ajoutée dans Player.js
     if (this.player1.resetPosition) {
@@ -458,6 +533,10 @@ export default class GameScene extends Phaser.Scene {
   checkWinner() {
     if (this.timerEvent) this.timerEvent.remove();
     if (this.gameOver) return;
+
+    if (this.koSound) {
+      this.koSound.play();
+    }
 
     this.gameOver = true;
     // On ne pause pas la physique tout de suite pour laisser l'anim de mort se jouer

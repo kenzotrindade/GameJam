@@ -17,21 +17,32 @@ const dataAttack = {
     range: 240,
     duration: 400,
     animSuffix: "_attack1",
+    shake: { intensity: 0.002, duration: 100 },
+    hitStop: 30,
+    bloodCount: 15, // Peu de sang
+    bloodSpeed: 200, // Vitesse modérée
   },
   mid: {
     damage: 10,
     range: 280,
-    duration: 600,
+    duration: 500,
     animSuffix: "_attack2",
+    shake: { intensity: 0.008, duration: 150 },
+    hitStop: 60,
+    bloodCount: 40, // Quantité moyenne
+    bloodSpeed: 400,
   },
   heavy: {
     damage: 15,
     range: 320,
     duration: 900,
     animSuffix: "_attack2",
+    shake: { intensity: 0.01, duration: 250 },
+    hitStop: 120,
+    bloodCount: 120, // "Boucherie" : gicle partout !
+    bloodSpeed: 800, // Vitesse élevée pour l'effet "projection"
   },
 };
-
 export class Player extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y, textureKey, color) {
     super(scene, x, y, textureKey + "_idle");
@@ -106,12 +117,27 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     if (Phaser.Input.Keyboard.JustDown(keys.lowattack)) {
       this.executeAttack("low");
+      this.play(this.textureKey + "_attack1", true);
+
+      if (this.scene.katanaSounds) {
+        this.scene.katanaSounds.low.play();
+      }
       return;
     } else if (Phaser.Input.Keyboard.JustDown(keys.midattack)) {
       this.executeAttack("mid");
+      this.play(this.textureKey + "_attack2", true);
+
+      if (this.scene.katanaSounds) {
+        this.scene.katanaSounds.mid.play();
+      }
       return;
     } else if (Phaser.Input.Keyboard.JustDown(keys.heavyattack)) {
       this.executeAttack("heavy");
+      this.play(this.textureKey + "_attack2", true);
+
+      if (this.scene.katanaSounds) {
+        this.scene.katanaSounds.heavy.play();
+      }
       return;
     }
 
@@ -161,7 +187,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const config = dataAttack[type];
     this.state = statePlayer.attack;
     this.setVelocityX(0);
-
     this.play(this.textureKey + config.animSuffix);
 
     const bodyHalfWidth = this.body.width / 2;
@@ -186,44 +211,88 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const enemy =
       this === this.scene.player1 ? this.scene.player2 : this.scene.player1;
 
-    if (enemy) {
-      this.scene.physics.overlap(hitbox, enemy, () => {
-        if (
-          enemy.state !== statePlayer.hitstun &&
-          enemy.state !== statePlayer.dead
-        ) {
-          enemy.takeDamage(config.damage, this.x);
-        }
-      });
-    }
+    let hasHit = false;
 
-    // A. Événement VISUEL : Retour à l'Idle
-    this.once("animationcomplete", () => {
-      if (this.state === statePlayer.attack) {
-        this.play(this.textureKey + "_idle", true);
+    this.scene.physics.overlap(hitbox, enemy, () => {
+      if (
+        !hasHit &&
+        enemy.state !== statePlayer.hitstun &&
+        enemy.state !== statePlayer.dead
+      ) {
+        hasHit = true;
+
+        // --- HIT STOP NERVEUX ---
+        const stopDuration = config.hitStop || 50;
+
+        // On fige uniquement les animations et les vitesses
+        const oldVelocitySelf = this.body.velocity.clone();
+        const oldVelocityEnemy = enemy.body.velocity.clone();
+
+        this.anims.pause();
+        enemy.anims.pause();
+        this.body.setAllowGravity(false);
+        enemy.body.setAllowGravity(false);
+        this.setVelocity(0, 0);
+        enemy.setVelocity(0, 0);
+
+        // On utilise le temps réel du navigateur (setTimeout) pour être indépendant de Phaser
+        setTimeout(() => {
+          if (this.active && enemy.active) {
+            this.anims.resume();
+            enemy.anims.resume();
+            this.body.setAllowGravity(true);
+            enemy.body.setAllowGravity(true);
+
+            // On applique les dégâts et le recul APRES la pause pour le feeling
+            enemy.takeDamage(config.damage, this.x, type);
+          }
+        }, stopDuration);
+
+        // --- SHAKE (Lui ne freeze jamais) ---
+        if (config.shake) {
+          this.scene.cameras.main.shake(
+            config.shake.duration,
+            config.shake.intensity
+          );
+        }
       }
     });
 
-    // B. Événement LOGIQUE : Fin du Cooldown
+    // Nettoyage standard
+    this.once("animationcomplete", () => {
+      if (this.state === statePlayer.attack)
+        this.play(this.textureKey + "_idle", true);
+    });
+
     this.scene.time.delayedCall(config.duration, () => {
       if (hitbox.active) hitbox.destroy();
-
       if (
         this.state !== statePlayer.dead &&
         this.state !== statePlayer.hitstun
       ) {
         this.state = statePlayer.idle;
-        this.play(this.textureKey + "_idle", true);
       }
     });
   }
 
-  takeDamage(amount, attackerX) {
+  takeDamage(amount, attackerX, attackType = "low") {
     if (this.state === statePlayer.dead) return;
 
+    const config = dataAttack[attackType];
     const attacker =
       this === this.scene.player1 ? this.scene.player2 : this.scene.player1;
-    let knockbackMultiplier = 1.0;
+
+    // --- FLASH DE DOULEUR (Sur le personnage) ---
+    this.setTintFill(0xffffff);
+    this.setAlpha(0.5);
+
+    this.scene.time.delayedCall(100, () => {
+      this.clearTint();
+      this.setAlpha(1);
+      if (this.baseColor) {
+        this.setTint(this.baseColor);
+      }
+    });
 
     if (this.state === statePlayer.block) {
       amount = Math.floor(amount * 0.2);
@@ -239,8 +308,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     this.hp -= amount;
 
+    if (attackType === "heavy" && this.state !== statePlayer.block) {
+      // flash(durée, rouge, vert, bleu, intensité)
+      this.scene.cameras.main.flash(100, 255, 255, 255, 0.5);
+    }
+
+    // --- GESTION DU SANG ---
     if (this.scene.hitParticles) {
-      this.scene.hitParticles.explode(15, this.x, this.y - 100);
+      // On fait exploser au niveau du torse visuel
+      // Puisque le sprite est grand (scale 3.5), on monte de 100 à 150 pixels depuis les pieds
+      const bloodY = this.y - 350;
+      const bloodX = this.x;
+
+      this.scene.hitParticles.explode(20, bloodX, bloodY);
     }
 
     if (this.hp <= 0) {
@@ -251,19 +331,23 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
+    // --- HITSTUN (Recul physique) ---
     this.state = statePlayer.hitstun;
     this.play(this.textureKey + "_hit");
 
+    const kbForce =
+      attackType === "heavy" ? 200 : attackType === "mid" ? 100 : 50;
     const knockbackDir = this.x < attackerX ? -1 : 1;
     this.setVelocityX(200 * knockbackMultiplier * knockbackDir);
     this.setVelocityY(-200 * knockbackMultiplier);
 
-    this.once("animationcomplete", () => {
+    // this.setVelocityX(kbForce * knockbackMultiplier * knockbackDir);
+    // this.setVelocityY(-100 * knockbackMultiplier);
+
+    // Sortie de hitstun
+    this.scene.time.delayedCall(config.duration * 0.5, () => {
       if (this.state !== statePlayer.dead) {
         this.state = statePlayer.idle;
-        this.play(this.textureKey + "_idle", true);
-        this.clearTint();
-        if (this.baseColor) this.setTint(this.baseColor);
       }
     });
   }
