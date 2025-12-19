@@ -11,6 +11,7 @@ export default class GameScene extends Phaser.Scene {
     this.isPaused = true;
     this.gameOver = false;
     this.timerEvent = null;
+    this.debugMode = false;
   }
 
   preload() {
@@ -204,6 +205,37 @@ export default class GameScene extends Phaser.Scene {
         }),
         frameRate: 10,
         repeat: 0,
+      });
+
+      this.debugBtn = this.add
+        .text(width / 2, 20, "DEBUG: OFF", {
+          fontSize: "16px",
+          backgroundColor: "#333",
+          padding: { x: 10, y: 5 },
+          fill: "#fff",
+        })
+        .setOrigin(0.5, 0)
+        .setInteractive({ useHandCursor: true })
+        .setScrollFactor(0)
+        .setDepth(1000);
+
+      this.debugBtn.on("pointerdown", () => {
+        this.debugMode = !this.debugMode;
+        this.debugBtn.setText(`DEBUG: ${this.debugMode ? "ON" : "OFF"}`);
+        this.debugBtn.setBackgroundColor(this.debugMode ? "#090" : "#333");
+
+        // Gestion de la physique
+        this.physics.world.drawDebug = this.debugMode;
+
+        if (this.debugMode) {
+          if (!this.physics.world.debugGraphic) {
+            this.physics.world.createDebugGraphic();
+          }
+        } else {
+          if (this.physics.world.debugGraphic) {
+            this.physics.world.debugGraphic.clear();
+          }
+        }
       });
     };
 
@@ -438,6 +470,21 @@ export default class GameScene extends Phaser.Scene {
   update() {
     if (this.gameOver || this.isPaused) return;
 
+    if (!this.debugGraphics) {
+      this.debugGraphics = this.add.graphics().setDepth(999);
+    }
+
+    this.debugGraphics.clear();
+
+    if (this.debugMode) {
+      this.debugGraphics.lineStyle(2, 0x00ff00, 1); // Ligne verte
+
+      // Ligne pour Player 1
+      this.drawDirectionLine(this.player1);
+      // Ligne pour Player 2
+      this.drawDirectionLine(this.player2);
+    }
+
     this.player1.update(this.keysP1, this.player2);
     this.player2.update(this.keysP2, this.player1);
 
@@ -535,5 +582,22 @@ export default class GameScene extends Phaser.Scene {
       this.game.destroy(true);
       window.dispatchEvent(new Event("reset-menu"));
     });
+  }
+
+  // Ajoute ceci après displayFinalVictory(winner) { ... }
+  drawDirectionLine(player) {
+    if (!player) return;
+    const length = 60;
+    const startX = player.x;
+    const startY = player.y;
+    // On vérifie le flipX pour la direction
+    const direction = player.flipX ? -1 : 1;
+
+    this.debugGraphics.lineBetween(
+      startX,
+      startY,
+      startX + length * direction,
+      startY
+    );
   }
 }
