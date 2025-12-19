@@ -17,70 +17,78 @@ export default class GameScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image("fond", "img/1125239.jpg");
+    // 1. CHARGEMENT BASIQUE
+    this.load.image("fond", "/img/1125239.jpg");
     const frameConfig = { frameWidth: 200, frameHeight: 200 };
 
-    this.load.audio("ko_sound", "audio/ko.mp3");
-
+    // 2. CHARGEMENT AUDIO
+    this.load.audio("ko_sound", "/audio/ko.mp3"); // Ajout du slash / par sécurité
     for (let i = 1; i <= 3; i++) {
-      this.load.audio(`katana_${i}`, `audio/katana${i}.mp3`);
+      this.load.audio(`katana_${i}`, `/audio/katana${i}.mp3`);
     }
-
     for (let i = 1; i <= 5; i++) {
-      this.load.audio(`round_${i}`, `audio/round${i}.mp3`);
+      this.load.audio(`round_${i}`, `/audio/round${i}.mp3`);
     }
 
-    // Fonction pour charger un dossier entier d'un coup
-    const loadCharacter = (prefix, folderName) => {
-      this.load.spritesheet(
-        `${prefix}_idle`,
-        `img/${folderName}/Idle.png`,
-        frameConfig
-      );
-      this.load.spritesheet(
-        `${prefix}_run`,
-        `img/${folderName}/Run.png`,
-        frameConfig
-      );
-      this.load.spritesheet(
-        `${prefix}_jump`,
-        `img/${folderName}/Jump.png`,
-        frameConfig
-      );
-      this.load.spritesheet(
-        `${prefix}_fall`,
-        `img/${folderName}/Fall.png`,
-        frameConfig
-      );
-      this.load.spritesheet(
-        `${prefix}_attack1`,
-        `img/${folderName}/Attack1.png`,
-        frameConfig
-      );
-      this.load.spritesheet(
-        `${prefix}_attack2`,
-        `img/${folderName}/Attack2.png`,
-        frameConfig
-      );
-      this.load.spritesheet(
-        `${prefix}_hit`,
-        `img/${folderName}/Take Hit.png`,
-        frameConfig
-      ); // Attention espace
-      this.load.spritesheet(
-        `${prefix}_death`,
-        `img/${folderName}/Death.png`,
-        frameConfig
-      );
+    // 3. CHARGEMENT DES PERSONNAGES
+    const colors = ["red", "emerald", "blue", "yellow", "purple"];
+    const folders = {
+      red: "RedProtector",
+      emerald: "EmeraldProtector",
+      blue: "BlueProtector",
+      yellow: "YellowProtector",
+      purple: "PurpleProtector",
     };
 
-    // 1. On charge P1 (Le Rouge)
-    loadCharacter("red", "RedProtector");
+    colors.forEach((color) => {
+      const folder = folders[color];
+      // On utilise "/img/..." pour éviter les erreurs 404
 
-    // 2. On charge P2 (Le Vert)
-    loadCharacter("emerald", "EmeraldProtector");
+      this.load.spritesheet(
+        `${color}_idle`,
+        `/img/${folder}/Idle.png`,
+        frameConfig
+      );
+      this.load.spritesheet(
+        `${color}_run`,
+        `/img/${folder}/Run.png`,
+        frameConfig
+      );
+      this.load.spritesheet(
+        `${color}_jump`,
+        `/img/${folder}/Jump.png`,
+        frameConfig
+      );
+      this.load.spritesheet(
+        `${color}_fall`,
+        `/img/${folder}/Fall.png`,
+        frameConfig
+      );
+      this.load.spritesheet(
+        `${color}_attack1`,
+        `/img/${folder}/Attack1.png`,
+        frameConfig
+      );
+      this.load.spritesheet(
+        `${color}_attack2`,
+        `/img/${folder}/Attack2.png`,
+        frameConfig
+      );
 
-    // ... tes particules ...
+      this.load.spritesheet(
+        `${color}_hit`,
+        `/img/${folder}/TakeHit.png`,
+        frameConfig
+      );
+
+      this.load.spritesheet(
+        `${color}_death`,
+        `/img/${folder}/Death.png`,
+        frameConfig
+      );
+    });
+
+    // PARTICULES
     const graphics = this.make.graphics({ x: 0, y: 0, add: false });
     graphics.fillStyle(0xffb7c5, 1);
     graphics.fillCircle(4, 4, 4);
@@ -107,21 +115,20 @@ export default class GameScene extends Phaser.Scene {
     });
 
     this.koSound = this.sound.add("ko_sound");
-
     this.katanaSounds = {
       low: this.sound.add("katana_1"),
       mid: this.sound.add("katana_2"),
       heavy: this.sound.add("katana_3"),
     };
-
     this.roundSounds = {};
     for (let i = 1; i <= 5; i++) {
       this.roundSounds[i] = this.sound.add(`round_${i}`);
     }
 
-    // --- 1. DÉCOR ---
+    // DÉCOR
     this.add.image(width / 2, height / 2, "fond").setDisplaySize(width, height);
 
+    // PARTICULES
     this.hitParticles = this.add.particles(0, 0, "hit_particle", {
       speed: { min: 150, max: 400 },
       scale: { start: 1.5, end: 0 },
@@ -132,8 +139,12 @@ export default class GameScene extends Phaser.Scene {
     });
     this.hitParticles.setDepth(100);
 
-    // --- 2. CRÉATION DES ANIMATIONS (AUTO) ---
-    // Cette fonction crée toutes les anims pour une couleur donnée (red ou emerald)
+    // RÉCUPÉRATION DES CHOIX
+    const p1Skin = this.registry.get("p1_skin") || "red";
+    const p2Skin = this.registry.get("p2_skin") || "emerald";
+    console.log(`Combat : ${p1Skin} VS ${p2Skin}`);
+
+    // CRÉATION DES ANIMATIONS
     const createAnimsFor = (prefix) => {
       this.anims.create({
         key: `${prefix}_idle`,
@@ -209,11 +220,12 @@ export default class GameScene extends Phaser.Scene {
       });
     };
 
-    // On génère les anims pour les deux !
-    createAnimsFor("red");
-    createAnimsFor("emerald");
+    createAnimsFor(p1Skin);
+    if (p1Skin !== p2Skin) {
+      createAnimsFor(p2Skin);
+    }
 
-    // --- 3. PHYSIQUE ---
+    // PHYSIQUE
     const platforms = this.physics.add.staticGroup();
     const ground = this.add.rectangle(
       width / 2,
@@ -225,21 +237,15 @@ export default class GameScene extends Phaser.Scene {
     this.physics.add.existing(ground, true);
     platforms.add(ground);
 
-    // --- 4. CRÉATION DES JOUEURS (LE MOMENT CLÉ) ---
-
-    // JOUEUR 1 : On lui donne la clé "red".
-    // On met 'null' en couleur car il est déjà rouge naturellement !
-    this.player1 = new Player(this, 250, height - 100, "red", null);
-
-    // JOUEUR 2 : On lui donne la clé "emerald".
-    // On met 'null' en couleur car il est déjà vert naturellement !
-    this.player2 = new Player(this, width - 250, height - 100, "emerald", null);
+    // CRÉATION JOUEURS
+    this.player1 = new Player(this, 250, height - 100, p1Skin, null);
+    this.player2 = new Player(this, width - 250, height - 100, p2Skin, null);
 
     this.physics.add.collider(this.player1, platforms);
     this.physics.add.collider(this.player2, platforms);
     this.physics.add.collider(this.player1, this.player2);
 
-    // --- 5. INPUTS (CLAVIER) ---
+    // CONTROLES
     this.keysP1 = this.input.keyboard.addKeys({
       up: Phaser.Input.Keyboard.KeyCodes.UP,
       left: Phaser.Input.Keyboard.KeyCodes.LEFT,
@@ -262,7 +268,6 @@ export default class GameScene extends Phaser.Scene {
       dash: Phaser.Input.Keyboard.KeyCodes.SPACE,
     });
 
-    // --- 6. INTERFACE (UI) ---
     this.createHealthBars(width, height);
 
     this.timerText = this.add
@@ -276,25 +281,10 @@ export default class GameScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setVisible(false);
 
-    // Boutons d'abandon
     this.createSurrenderButtons(width);
 
-    // Lancement du menu
+    // MENU DE DÉPART (BO3/BO5)
     this.showMenu();
-  }
-
-  // --- MÉTHODES UTILITAIRES ---
-
-  createAnimation(key, frameRate, repeat) {
-    // Vérifie si l'anim existe déjà pour éviter les warnings
-    if (!this.anims.exists(key)) {
-      this.anims.create({
-        key: key,
-        frames: this.anims.generateFrameNumbers(key),
-        frameRate: frameRate,
-        repeat: repeat,
-      });
-    }
   }
 
   createHealthBars(width, height) {
@@ -302,21 +292,19 @@ export default class GameScene extends Phaser.Scene {
     const barHeight = 30;
     const y = 50;
 
-    // Fond P1
+    // P1
     this.add
       .rectangle(width * 0.3, y, barWidth + 5, barHeight + 5, 0x000000, 0.5)
       .setOrigin(1, 0.5);
-    // Barre P1
     this.healthBar1 = this.add
       .rectangle(width * 0.3, y, barWidth, barHeight, 0x27f527)
       .setOrigin(1, 0.5)
       .setVisible(false);
 
-    // Fond P2
+    // P2
     this.add
       .rectangle(width * 0.7, y, barWidth + 5, barHeight + 5, 0x000000, 0.5)
       .setOrigin(0, 0.5);
-    // Barre P2
     this.healthBar2 = this.add
       .rectangle(width * 0.7, y, barWidth, barHeight, 0x27f527)
       .setOrigin(0, 0.5)
@@ -369,7 +357,6 @@ export default class GameScene extends Phaser.Scene {
       .text(width / 2 - 120, height / 2, "BO3", btnStyle)
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
-
     let btn5 = this.add
       .text(width / 2 + 120, height / 2, "BO5", btnStyle)
       .setOrigin(0.5)
@@ -383,12 +370,10 @@ export default class GameScene extends Phaser.Scene {
     this.maxRounds = rounds;
     this.needsWins = Math.ceil(rounds / 2);
 
-    // On nettoie le menu
-    t.destroy();
-    b3.destroy();
-    b5.destroy();
+    if (t.destroy) t.destroy();
+    if (b3.destroy) b3.destroy();
+    if (b5.destroy) b5.destroy();
 
-    // On affiche l'interface de combat
     this.healthBar1.setVisible(true);
     this.healthBar2.setVisible(true);
     this.timerText.setVisible(true);
@@ -406,13 +391,11 @@ export default class GameScene extends Phaser.Scene {
     this.timerText.setText("99");
 
     const currentRoundNumber = this.p1Score + this.p2Score + 1;
-
+    // JOUER SON ROUND
     if (this.roundSounds[currentRoundNumber]) {
       this.roundSounds[currentRoundNumber].play();
     }
 
-    // IMPORTANT: Reset complet des joueurs (Position + Animation + Stats)
-    // On utilise la méthode resetPosition qu'on a ajoutée dans Player.js
     if (this.player1.resetPosition) {
       this.player1.resetPosition(250, this.scale.height - 100);
       this.player2.resetPosition(
@@ -420,14 +403,12 @@ export default class GameScene extends Phaser.Scene {
         this.scale.height - 100
       );
     } else {
-      // Fallback si la méthode n'existe pas encore
       this.player1.setPosition(250, this.scale.height - 100);
       this.player2.setPosition(this.scale.width - 250, this.scale.height - 100);
       this.player1.hp = gameConfig.maxHp;
       this.player2.hp = gameConfig.maxHp;
     }
 
-    // Compte à rebours visuel
     let introText = this.add
       .text(this.scale.width / 2, this.scale.height / 2, "", {
         fontSize: "100px",
@@ -438,7 +419,7 @@ export default class GameScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    let steps = ["3", "2", "1", "勝負 !"]; // "FIGHT !" en Japonais (Shōbu)
+    let steps = ["3", "2", "1", "勝負 !"];
     steps.forEach((val, i) => {
       this.time.delayedCall(i * 1000, () => {
         introText.setText(val);
@@ -474,15 +455,12 @@ export default class GameScene extends Phaser.Scene {
     this.player1.update(this.keysP1, this.player2, this.pad1);
     this.player2.update(this.keysP2, this.player1, this.pad2);
 
-    // Orientation (Flip)
     this.player1.updateFacing(this.player2);
     this.player2.updateFacing(this.player1);
 
-    // Mise à jour Barres de vie
     this.healthBar1.width = (this.player1.hp / gameConfig.maxHp) * 300;
     this.healthBar2.width = (this.player2.hp / gameConfig.maxHp) * 300;
 
-    // Vérification KO
     if (this.player1.hp <= 0 || this.player2.hp <= 0) {
       this.checkWinner();
     }
@@ -494,25 +472,13 @@ export default class GameScene extends Phaser.Scene {
     this.checkWinner();
   }
 
-  updateHealthBar(bar, hp) {
-    const percentage = hp / gameConfig.maxHp;
-    bar.width = percentage * 400;
-    if (percentage < 0.25) bar.setFillStyle(0xff0000);
-    else if (percentage < 0.5) bar.setFillStyle(0xffff00);
-    else bar.setFillStyle(0x27f527);
-  }
-
   checkWinner() {
     if (this.timerEvent) this.timerEvent.remove();
     if (this.gameOver) return;
 
-    if (this.koSound) {
-      this.koSound.play();
-    }
+    if (this.koSound) this.koSound.play();
 
     this.gameOver = true;
-    // On ne pause pas la physique tout de suite pour laisser l'anim de mort se jouer
-    // this.physics.pause();
 
     let winner =
       this.player1.hp > this.player2.hp
@@ -549,7 +515,6 @@ export default class GameScene extends Phaser.Scene {
 
   displayFinalVictory(winner) {
     const { width, height } = this.scale;
-
     this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.85);
 
     this.add
@@ -571,6 +536,18 @@ export default class GameScene extends Phaser.Scene {
       this.p1Score = 0;
       this.p2Score = 0;
       this.scene.restart();
+    });
+
+    this.add
+      .text(width / 2, height / 2 + 140, "[M] Retour au Menu", {
+        fontSize: "28px",
+        fill: "#fff",
+      })
+      .setOrigin(0.5);
+
+    this.input.keyboard.once("keydown-M", () => {
+      this.game.destroy(true);
+      window.dispatchEvent(new Event("reset-menu"));
     });
   }
 }

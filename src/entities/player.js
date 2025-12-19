@@ -14,12 +14,12 @@ const dataAttack = {
   low: {
     damage: 5,
     range: 240,
-    duration: 300,
+    duration: 400,
     animSuffix: "_attack1",
     shake: { intensity: 0.002, duration: 100 },
     hitStop: 30,
-    bloodCount: 15, // Peu de sang
-    bloodSpeed: 200, // Vitesse modérée
+    bloodCount: 15,
+    bloodSpeed: 200,
   },
   mid: {
     damage: 10,
@@ -28,20 +28,21 @@ const dataAttack = {
     animSuffix: "_attack2",
     shake: { intensity: 0.008, duration: 150 },
     hitStop: 60,
-    bloodCount: 40, // Quantité moyenne
+    bloodCount: 40,
     bloodSpeed: 400,
   },
   heavy: {
     damage: 15,
     range: 320,
-    duration: 800,
+    duration: 900,
     animSuffix: "_attack2",
     shake: { intensity: 0.01, duration: 250 },
     hitStop: 120,
-    bloodCount: 120, // "Boucherie" : gicle partout !
-    bloodSpeed: 800, // Vitesse élevée pour l'effet "projection"
+    bloodCount: 120,
+    bloodSpeed: 800,
   },
 };
+
 export class Player extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y, textureKey, color) {
     super(scene, x, y, textureKey + "_idle");
@@ -54,7 +55,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setOrigin(0.5, 1);
     this.setCollideWorldBounds(true);
 
-    // --- SCALE & HITBOX (Sprites 200x200) ---
     this.setScale(3.5);
     this.body.setSize(26, 47);
     this.body.setOffset(87, 75);
@@ -97,8 +97,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     const isGrounded = this.body.touching.down;
 
-    // On ne met à zéro que si on n'est pas en train d'être repoussé par un blocage
-    // ou si on est dans un état contrôlable.
     if (this.state !== statePlayer.attack) {
       this.setVelocityX(0);
     }
@@ -135,7 +133,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
-    // Si on attaque, on ne peut rien faire d'autre (Cooldown)
     if (this.state === statePlayer.attack) return;
 
     if (
@@ -202,7 +199,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     const bodyHalfWidth = this.body.width / 2;
     const attackHalfWidth = config.range / 2;
-    const offset = bodyHalfWidth + attackHalfWidth;
+    const overlap = 0;
+    const offset = bodyHalfWidth + attackHalfWidth - overlap;
+
     const hitboxX = this.x + offset * this.direction;
     const hitboxY = this.body.center.y;
 
@@ -230,10 +229,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       ) {
         hasHit = true;
 
-        // --- HIT STOP NERVEUX ---
         const stopDuration = config.hitStop || 50;
 
-        // On fige uniquement les animations et les vitesses
         const oldVelocitySelf = this.body.velocity.clone();
         const oldVelocityEnemy = enemy.body.velocity.clone();
 
@@ -244,7 +241,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.setVelocity(0, 0);
         enemy.setVelocity(0, 0);
 
-        // On utilise le temps réel du navigateur (setTimeout) pour être indépendant de Phaser
         setTimeout(() => {
           if (this.active && enemy.active) {
             this.anims.resume();
@@ -252,12 +248,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.body.setAllowGravity(true);
             enemy.body.setAllowGravity(true);
 
-            // On applique les dégâts et le recul APRES la pause pour le feeling
             enemy.takeDamage(config.damage, this.x, type);
           }
         }, stopDuration);
 
-        // --- SHAKE (Lui ne freeze jamais) ---
         if (config.shake) {
           this.scene.cameras.main.shake(
             config.shake.duration,
@@ -267,7 +261,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     });
 
-    // Nettoyage standard
     this.once("animationcomplete", () => {
       if (this.state === statePlayer.attack)
         this.play(this.textureKey + "_idle", true);
@@ -287,11 +280,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   takeDamage(amount, attackerX, attackType = "low") {
     if (this.state === statePlayer.dead) return;
 
+    let knockbackMultiplier = 1;
+
     const config = dataAttack[attackType];
     const attacker =
       this === this.scene.player1 ? this.scene.player2 : this.scene.player1;
 
-    // --- FLASH DE DOULEUR (Sur le personnage) ---
     this.setTintFill(0xffffff);
     this.setAlpha(0.5);
 
@@ -303,35 +297,30 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     });
 
-    // --- LOGIQUE DE BLOCAGE ---
-    let knockbackMultiplier = 1.0;
     if (this.state === statePlayer.block) {
       amount = Math.floor(amount * 0.2);
-      knockbackMultiplier = 0.3;
+      knockbackMultiplier = 0.5;
+
       if (attacker) {
-        attacker.setVelocityX(this.x < attackerX ? 400 : -400);
+        const attackerPushDir = this.x < attackerX ? 1 : -1;
+        attacker.setVelocityX(200 * 1.5 * attackerPushDir);
+        attacker.setTint(0xffffff);
+        this.scene.time.delayedCall(100, () => attacker.clearTint());
       }
     }
 
-    // Application des dégâts
     this.hp -= amount;
 
     if (attackType === "heavy" && this.state !== statePlayer.block) {
-      // flash(durée, rouge, vert, bleu, intensité)
       this.scene.cameras.main.flash(100, 255, 255, 255, 0.5);
     }
 
-    // --- GESTION DU SANG ---
     if (this.scene.hitParticles) {
-      // On fait exploser au niveau du torse visuel
-      // Puisque le sprite est grand (scale 3.5), on monte de 100 à 150 pixels depuis les pieds
-      const bloodY = this.y - 450;
+      const bloodY = this.y - 350;
       const bloodX = this.x;
-
       this.scene.hitParticles.explode(20, bloodX, bloodY);
     }
 
-    // --- LOGIQUE MORT ---
     if (this.hp <= 0) {
       this.hp = 0;
       this.state = statePlayer.dead;
@@ -340,7 +329,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
-    // --- HITSTUN (Recul physique) ---
     this.state = statePlayer.hitstun;
     this.play(this.textureKey + "_hit");
 
@@ -348,10 +336,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       attackType === "heavy" ? 200 : attackType === "mid" ? 100 : 50;
     const knockbackDir = this.x < attackerX ? -1 : 1;
 
-    this.setVelocityX(kbForce * knockbackMultiplier * knockbackDir);
-    this.setVelocityY(-100 * knockbackMultiplier);
+    this.setVelocityX(200 * knockbackMultiplier * knockbackDir);
+    this.setVelocityY(-200 * knockbackMultiplier);
 
-    // Sortie de hitstun
     this.scene.time.delayedCall(config.duration * 0.5, () => {
       if (this.state !== statePlayer.dead) {
         this.state = statePlayer.idle;

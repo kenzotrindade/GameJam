@@ -1,13 +1,54 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>gamejam</title>
+    <title>Bushido Showdown</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="./src/style.css" />
   </head>
   <body>
     <div id="app"></div>
-    <script type="module" src="/src/main.js"></script>
+
+    <div id="htmlMenuOverlay">
+      <h1>BUSHIDO</h1>
+
+      <div class="characterSelect">
+        <section id="p1Controls">
+          <h3>Joueur 1</h3>
+          <article class="Red">
+            <h4>Bushido Rouge</h4>
+            <img src="/img/samourai.png" alt="Premier Samourai" />
+            <button class="p1-btn" data-char="red">Choisir Rouge</button>
+          </article>
+          <article class="Green">
+            <h4>Bushido Vert</h4>
+            <img src="/img/samourai2.png" alt="Deuxieme Samourai" />
+            <button class="p1-btn" data-char="emerald">Choisir Vert</button>
+          </article>
+        </section>
+
+        <section id="p2Controls">
+          <h3>Joueur 2</h3>
+          <article class="Red">
+            <h4>Bushido Rouge</h4>
+            <img src="/img/samourai.png" alt="Premier Samourai" />
+            <button class="p2-btn" data-char="red">Choisir Rouge</button>
+          </article>
+          <article class="Green">
+            <h4>Bushido Vert</h4>
+            <img src="/img/samourai2.png" alt="Deuxieme Samourai" />
+            <button class="p2-btn" data-char="emerald">Choisir Vert</button>
+          </article>
+        </section>
+      </div>
+
+      <button id="startBtn">COMBATTRE !</button>
+    </div>
+
+    <script type="module" src="/src/menuController.js"></script>
   </body>
 </html>
