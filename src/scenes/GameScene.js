@@ -285,7 +285,7 @@ export default class GameScene extends Phaser.Scene {
       lowattack: Phaser.Input.Keyboard.KeyCodes.W,
       midattack: Phaser.Input.Keyboard.KeyCodes.X,
       heavyattack: Phaser.Input.Keyboard.KeyCodes.C,
-      dash: Phaser.Input.Keyboard.KeyCodes.TAB,
+      dash: Phaser.Input.Keyboard.KeyCodes.SPACE,
     });
 
     this.keysP2 = this.input.keyboard.addKeys({
@@ -296,7 +296,7 @@ export default class GameScene extends Phaser.Scene {
       lowattack: Phaser.Input.Keyboard.KeyCodes.U,
       midattack: Phaser.Input.Keyboard.KeyCodes.I,
       heavyattack: Phaser.Input.Keyboard.KeyCodes.O,
-      dash: Phaser.Input.Keyboard.KeyCodes.SPACE,
+      dash: Phaser.Input.Keyboard.KeyCodes.TAB,
     });
 
     this.createHealthBars(width, height);
