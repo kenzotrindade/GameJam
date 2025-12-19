@@ -17,7 +17,7 @@ const dataAttack = {
     range: 240,
     duration: 300,
     animSuffix: "_attack1",
-    shake: { intensity: 0.005, duration: 100 },
+    shake: { intensity: 0.002, duration: 100 },
     hitStop: 30,
     bloodCount: 15, // Peu de sang
     bloodSpeed: 200, // Vitesse modérée
@@ -27,7 +27,7 @@ const dataAttack = {
     range: 280,
     duration: 500,
     animSuffix: "_attack2",
-    shake: { intensity: 0.01, duration: 150 },
+    shake: { intensity: 0.008, duration: 150 },
     hitStop: 60,
     bloodCount: 40, // Quantité moyenne
     bloodSpeed: 400,
@@ -37,7 +37,7 @@ const dataAttack = {
     range: 320,
     duration: 800,
     animSuffix: "_attack2",
-    shake: { intensity: 0.02, duration: 250 },
+    shake: { intensity: 0.01, duration: 250 },
     hitStop: 120,
     bloodCount: 120, // "Boucherie" : gicle partout !
     bloodSpeed: 800, // Vitesse élevée pour l'effet "projection"
@@ -272,10 +272,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this === this.scene.player1 ? this.scene.player2 : this.scene.player1;
 
     // --- FLASH DE DOULEUR (Sur le personnage) ---
-    this.setTint(0xffffff);
+    this.setTintFill(0xffffff);
+    this.setAlpha(0.5);
+
     this.scene.time.delayedCall(100, () => {
       this.clearTint();
-      if (this.baseColor) this.setTint(this.baseColor);
+      this.setAlpha(1);
+      if (this.baseColor) {
+        this.setTint(this.baseColor);
+      }
     });
 
     // --- LOGIQUE DE BLOCAGE ---
@@ -291,43 +296,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Application des dégâts
     this.hp -= amount;
 
-    // --- FLASH ROUGE (Sur l'écran pour attaque lourde) ---
     if (attackType === "heavy" && this.state !== statePlayer.block) {
       // flash(durée, rouge, vert, bleu, intensité)
       this.scene.cameras.main.flash(100, 255, 255, 255, 0.5);
     }
 
-    // --- GESTION DU SANG DYNAMIQUE ---
+    // --- GESTION DU SANG ---
     if (this.scene.hitParticles) {
-      const emitter = this.scene.hitParticles;
+      // On fait exploser au niveau du torse visuel
+      // Puisque le sprite est grand (scale 3.5), on monte de 100 à 150 pixels depuis les pieds
+      const bloodY = this.y - 450;
+      const bloodX = this.x;
 
-      // Si l'adversaire est à gauche de l'attaquant, on projette vers la gauche (-1)
-      // Si l'adversaire est à droite de l'attaquant, on projette vers la droite (1)
-      const dir = this.x < attackerX ? -1 : 1;
-
-      emitter.setSpeed({
-        min: config.bloodSpeed * 0.7,
-        max: config.bloodSpeed,
-      });
-
-      // On calcule l'angle de projection (face à l'impact)
-      // 180° = Gauche, 0° = Droite
-      const baseAngle = dir === -1 ? 180 : 0;
-
-      emitter.setAngle({
-        min: baseAngle - 45,
-        max: baseAngle + 45,
-      });
-
-      // On fait exploser à la position du joueur touché
-      emitter.explode(config.bloodCount, this.x, this.body.center.y);
-
-      if (attackType === "heavy") {
-        // Pour le heavy, on ajoute une explosion circulaire en plus
-        emitter.setAngle({ min: 0, max: 360 });
-        emitter.setSpeed({ min: 100, max: 400 });
-        emitter.explode(config.bloodCount / 2, this.x, this.body.center.y);
-      }
+      this.scene.hitParticles.explode(20, bloodX, bloodY);
     }
 
     // --- LOGIQUE MORT ---
@@ -344,11 +325,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.play(this.textureKey + "_hit");
 
     const kbForce =
-      attackType === "heavy" ? 800 : attackType === "mid" ? 500 : 300;
+      attackType === "heavy" ? 200 : attackType === "mid" ? 100 : 50;
     const knockbackDir = this.x < attackerX ? -1 : 1;
 
     this.setVelocityX(kbForce * knockbackMultiplier * knockbackDir);
-    this.setVelocityY(-300 * knockbackMultiplier);
+    this.setVelocityY(-100 * knockbackMultiplier);
 
     // Sortie de hitstun
     this.scene.time.delayedCall(config.duration * 0.5, () => {
