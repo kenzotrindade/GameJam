@@ -133,18 +133,33 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       (pad && pad.X && !this.prevPadA)
     ) {
       this.executeAttack("low");
+      this.play(this.textureKey + "_attack1", true);
+
+      if (this.scene.katanaSounds) {
+        this.scene.katanaSounds.low.play();
+      }
       return;
     } else if (
       Phaser.Input.Keyboard.JustDown(keys.midattack) ||
       (pad && pad.A && !this.prevPadX)
     ) {
       this.executeAttack("mid");
+      this.play(this.textureKey + "_attack2", true);
+
+      if (this.scene.katanaSounds) {
+        this.scene.katanaSounds.mid.play();
+      }
       return;
     } else if (
       Phaser.Input.Keyboard.JustDown(keys.heavyattack) ||
       (pad && pad.B && !this.prevPadB)
     ) {
       this.executeAttack("heavy");
+      this.play(this.textureKey + "_attack2", true);
+
+      if (this.scene.katanaSounds) {
+        this.scene.katanaSounds.heavy.play();
+      }
       return;
     }
 
@@ -336,7 +351,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.scene.hitParticles) {
       // On fait exploser au niveau du torse visuel
       // Puisque le sprite est grand (scale 3.5), on monte de 100 à 150 pixels depuis les pieds
-      const bloodY = this.y - 450;
+      const bloodY = this.y - 350;
       const bloodX = this.x;
 
       this.scene.hitParticles.explode(20, bloodX, bloodY);

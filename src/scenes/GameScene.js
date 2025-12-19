@@ -20,6 +20,16 @@ export default class GameScene extends Phaser.Scene {
     this.load.image("fond", "img/1125239.jpg");
     const frameConfig = { frameWidth: 200, frameHeight: 200 };
 
+    this.load.audio("ko_sound", "audio/ko.mp3");
+
+    for (let i = 1; i <= 3; i++) {
+      this.load.audio(`katana_${i}`, `audio/katana${i}.mp3`);
+    }
+
+    for (let i = 1; i <= 5; i++) {
+      this.load.audio(`round_${i}`, `audio/round${i}.mp3`);
+    }
+
     // Fonction pour charger un dossier entier d'un coup
     const loadCharacter = (prefix, folderName) => {
       this.load.spritesheet(
@@ -95,6 +105,19 @@ export default class GameScene extends Phaser.Scene {
         console.log("Pad 2 connecté");
       }
     });
+
+    this.koSound = this.sound.add("ko_sound");
+
+    this.katanaSounds = {
+      low: this.sound.add("katana_1"),
+      mid: this.sound.add("katana_2"),
+      heavy: this.sound.add("katana_3"),
+    };
+
+    this.roundSounds = {};
+    for (let i = 1; i <= 5; i++) {
+      this.roundSounds[i] = this.sound.add(`round_${i}`);
+    }
 
     // --- 1. DÉCOR ---
     this.add.image(width / 2, height / 2, "fond").setDisplaySize(width, height);
@@ -382,6 +405,12 @@ export default class GameScene extends Phaser.Scene {
     this.timeLeft = 99;
     this.timerText.setText("99");
 
+    const currentRoundNumber = this.p1Score + this.p2Score + 1;
+
+    if (this.roundSounds[currentRoundNumber]) {
+      this.roundSounds[currentRoundNumber].play();
+    }
+
     // IMPORTANT: Reset complet des joueurs (Position + Animation + Stats)
     // On utilise la méthode resetPosition qu'on a ajoutée dans Player.js
     if (this.player1.resetPosition) {
@@ -476,6 +505,10 @@ export default class GameScene extends Phaser.Scene {
   checkWinner() {
     if (this.timerEvent) this.timerEvent.remove();
     if (this.gameOver) return;
+
+    if (this.koSound) {
+      this.koSound.play();
+    }
 
     this.gameOver = true;
     // On ne pause pas la physique tout de suite pour laisser l'anim de mort se jouer
