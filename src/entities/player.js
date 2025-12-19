@@ -305,7 +305,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.scene.hitParticles) {
       // On fait exploser au niveau du torse visuel
       // Puisque le sprite est grand (scale 3.5), on monte de 100 à 150 pixels depuis les pieds
-      const bloodY = this.y - 450;
+      const bloodY = this.y - 350;
       const bloodX = this.x;
 
       this.scene.hitParticles.explode(20, bloodX, bloodY);
