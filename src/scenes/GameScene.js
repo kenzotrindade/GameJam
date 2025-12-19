@@ -63,6 +63,13 @@ export default class GameScene extends Phaser.Scene {
     loadCharacter("red", "RedProtector");
     loadCharacter("emerald", "EmeraldProtector");
 
+    loadCharacter("blue", "BlueProtector");
+
+    loadCharacter("yellow", "YellowProtector");
+
+    loadCharacter("purple", "PurpleProtector");
+
+    // ... tes particules ...
     const graphics = this.make.graphics({ x: 0, y: 0, add: false });
     graphics.fillStyle(0xffb7c5, 1);
     graphics.fillCircle(4, 4, 4);
