@@ -141,7 +141,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     if (keys.left.isDown) {
-      if (this.x < opponent.x) {
+      if (keys.down.isDown) {
+        this.setVelocityX(0);
+        this.state = statePlayer.Block;
+      } else if (this.x < opponent.x) {
         this.setVelocityX(-walkBackSpeed);
         this.state = statePlayer.block;
       } else {
@@ -149,7 +152,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.state = statePlayer.walk;
       }
     } else if (keys.right.isDown) {
-      if (this.x > opponent.x) {
+      if (keys.down.isDown) {
+        this.setScaleY(2);
+        this.setVelocityX(0);
+        this.state = statePlayer.Block;
+      } else if (this.x > opponent.x) {
         this.setVelocityX(walkBackSpeed);
         this.state = statePlayer.block;
       } else {
