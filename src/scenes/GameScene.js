@@ -17,6 +17,7 @@ export default class GameScene extends Phaser.Scene {
     this.load.image("fond", "img/1125239.jpg");
     const frameConfig = { frameWidth: 200, frameHeight: 200 };
 
+    this.load.audio("ko_sound", "audio/ko.mp3");
     // Fonction pour charger un dossier entier d'un coup
     const loadCharacter = (prefix, folderName) => {
       this.load.spritesheet(
@@ -81,6 +82,8 @@ export default class GameScene extends Phaser.Scene {
 
   create() {
     const { width, height } = this.scale;
+
+    this.koSound = this.sound.add("ko_sound");
 
     // --- 1. DÉCOR ---
     this.add.image(width / 2, height / 2, "fond").setDisplaySize(width, height);
@@ -462,6 +465,10 @@ export default class GameScene extends Phaser.Scene {
   checkWinner() {
     if (this.timerEvent) this.timerEvent.remove();
     if (this.gameOver) return;
+
+    if (this.koSound) {
+      this.koSound.play();
+    }
 
     this.gameOver = true;
     // On ne pause pas la physique tout de suite pour laisser l'anim de mort se jouer
