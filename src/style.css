@@ -12,15 +12,16 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-.bodyGame {
+body {
   margin: 0;
   padding: 0;
   display: flex;
   justify-content: center;
   align-items: center;
-  min-width: 100vw;
-  min-height: 100vh;
   overflow: hidden;
+  font-family: "Press Start 2P", system-ui;
+  font-weight: 400;
+  letter-spacing: -2px;
 }
 
 #app {
@@ -45,6 +46,12 @@ button {
 }
 button:hover {
   border-color: #646cff;
+}
+
+h1 {
+  font-size: 50px;
+  color: black;
+  -webkit-text-stroke: 2px orange;
 }
 
 #app {
@@ -72,4 +79,16 @@ button:hover {
 
 .hidden {
   display: none !important;
+}
+
+.characterSelect {
+  display: flex;
+}
+
+#p1Controls {
+  margin-right: 120px;
+}
+
+#p2Controls {
+  margin-left: 200px;
 }
