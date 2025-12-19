@@ -106,7 +106,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (pad && pad.R2) {
       dash = true;
       dashIntensity = pad.R2 * 100 * 4;
-    } else if (keys.TAB.isDown) {
+    } else if (keys.dash.isDown) {
       dash = true;
       dashIntensity = 400;
     }
@@ -175,13 +175,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     if (
       Phaser.Input.Keyboard.JustDown(keys.lowattack) ||
-      (pad && pad.A && !this.prevPadA)
+      (pad && pad.X && !this.prevPadX)
     ) {
       this.executeAttack("low");
       return;
     } else if (
       Phaser.Input.Keyboard.JustDown(keys.midattack) ||
-      (pad && pad.X && !this.prevPadX)
+      (pad && pad.A && !this.prevPadA)
     ) {
       this.executeAttack("mid");
       return;
