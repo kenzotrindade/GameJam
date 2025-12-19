@@ -123,12 +123,27 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     if (Phaser.Input.Keyboard.JustDown(keys.lowattack)) {
       this.executeAttack("low");
+      this.play(this.textureKey + "_attack1", true);
+
+      if (this.scene.katanaSounds) {
+        this.scene.katanaSounds.low.play();
+      }
       return;
     } else if (Phaser.Input.Keyboard.JustDown(keys.midattack)) {
       this.executeAttack("mid");
+      this.play(this.textureKey + "_attack2", true);
+
+      if (this.scene.katanaSounds) {
+        this.scene.katanaSounds.mid.play();
+      }
       return;
     } else if (Phaser.Input.Keyboard.JustDown(keys.heavyattack)) {
       this.executeAttack("heavy");
+      this.play(this.textureKey + "_attack2", true);
+
+      if (this.scene.katanaSounds) {
+        this.scene.katanaSounds.heavy.play();
+      }
       return;
     }
 
