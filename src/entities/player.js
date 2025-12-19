@@ -196,6 +196,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   executeAttack(type) {
     const config = dataAttack[type];
+    if (this.scene.katanaSounds && this.scene.katanaSounds[type]) {
+      this.scene.katanaSounds[type].play();
+    }
     this.state = statePlayer.attack;
     this.setVelocityX(0);
     this.play(this.textureKey + config.animSuffix);
