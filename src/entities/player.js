@@ -106,6 +106,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (pad && pad.R2) {
       dash = true;
       dashIntensity = pad.R2 * 100 * 4;
+    } else if (keys.dash.isDown) {
+      dash = true;
+      dashIntensity = 400;
     }
 
     const walkSpeed = 300 + dashIntensity;
@@ -172,13 +175,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     if (
       Phaser.Input.Keyboard.JustDown(keys.lowattack) ||
-      (pad && pad.A && !this.prevPadA)
+      (pad && pad.X && !this.prevPadX)
     ) {
       this.executeAttack("low");
       return;
     } else if (
       Phaser.Input.Keyboard.JustDown(keys.midattack) ||
-      (pad && pad.X && !this.prevPadX)
+      (pad && pad.A && !this.prevPadA)
     ) {
       this.executeAttack("mid");
       return;
@@ -193,6 +196,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   executeAttack(type) {
     const config = dataAttack[type];
+    if (this.scene.katanaSounds && this.scene.katanaSounds[type]) {
+      this.scene.katanaSounds[type].play();
+    }
     this.state = statePlayer.attack;
     this.setVelocityX(0);
     this.play(this.textureKey + config.animSuffix);

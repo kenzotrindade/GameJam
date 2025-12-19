@@ -11,7 +11,7 @@ export default class GameScene extends Phaser.Scene {
     this.isPaused = true;
     this.gameOver = false;
     this.timerEvent = null;
-
+    this.debugMode = false;
     this.pad1 = null;
     this.pad2 = null;
   }
@@ -218,6 +218,38 @@ export default class GameScene extends Phaser.Scene {
         frameRate: 10,
         repeat: 0,
       });
+
+      this.debugBtn = this.add
+        .text(width / 2, 20, "DEBUG: OFF", {
+          fontSize: "16px",
+          backgroundColor: "#333",
+          padding: { x: 10, y: 5 },
+          fill: "#fff",
+        })
+        .setOrigin(0.5, 0)
+        .setInteractive({ useHandCursor: true })
+        .setScrollFactor(0)
+        .setDepth(1000);
+
+      this.debugBtn.on("pointerdown", () => {
+        this.debugMode = !this.debugMode;
+        this.debugBtn.setText(`DEBUG: ${this.debugMode ? "ON" : "OFF"}`);
+        this.debugBtn.setBackgroundColor(this.debugMode ? "#090" : "#333");
+
+        // Gestion de la physique
+        this.physics.world.drawDebug = this.debugMode;
+
+        if (this.debugMode) {
+          if (!this.physics.world.debugGraphic) {
+            this.physics.world.createDebugGraphic();
+          }
+        } else {
+          if (this.physics.world.debugGraphic) {
+            this.physics.world.debugGraphic.clear();
+          }
+        }
+      });
+      this.physics.world.drawDebug = false;
     };
 
     createAnimsFor(p1Skin);
@@ -254,7 +286,7 @@ export default class GameScene extends Phaser.Scene {
       lowattack: Phaser.Input.Keyboard.KeyCodes.W,
       midattack: Phaser.Input.Keyboard.KeyCodes.X,
       heavyattack: Phaser.Input.Keyboard.KeyCodes.C,
-      dash: Phaser.Input.Keyboard.KeyCodes.TAB,
+      dash: Phaser.Input.Keyboard.KeyCodes.SPACE,
     });
 
     this.keysP2 = this.input.keyboard.addKeys({
@@ -265,7 +297,7 @@ export default class GameScene extends Phaser.Scene {
       lowattack: Phaser.Input.Keyboard.KeyCodes.U,
       midattack: Phaser.Input.Keyboard.KeyCodes.I,
       heavyattack: Phaser.Input.Keyboard.KeyCodes.O,
-      dash: Phaser.Input.Keyboard.KeyCodes.SPACE,
+      dash: Phaser.Input.Keyboard.KeyCodes.TAB,
     });
 
     this.createHealthBars(width, height);
@@ -451,12 +483,68 @@ export default class GameScene extends Phaser.Scene {
   update() {
     if (this.gameOver || this.isPaused) return;
 
-    // Mise à jour des joueurs
+    if (!this.debugGraphics) {
+      this.debugGraphics = this.add.graphics().setDepth(999);
+    }
+
+    this.debugGraphics.clear();
+
+    if (this.debugMode) {
+      this.debugGraphics.lineStyle(2, 0x00ff00, 1); // Ligne verte
+
+      // Ligne pour Player 1
+      this.drawDirectionLine(this.player1);
+      // Ligne pour Player 2
+      this.drawDirectionLine(this.player2);
+    }
+
     this.player1.update(this.keysP1, this.player2, this.pad1);
     this.player2.update(this.keysP2, this.player1, this.pad2);
 
     this.player1.updateFacing(this.player2);
     this.player2.updateFacing(this.player1);
+
+    // --- Dans ta méthode update() ---
+
+    // 1. Calcul des ratios (0 à 1)
+    const p1LifeRatio = this.player1.hp / gameConfig.maxHp;
+    const p2LifeRatio = this.player2.hp / gameConfig.maxHp;
+
+    // 2. Animation fluide de la largeur (Lerp)
+    // On ajuste doucement la largeur actuelle vers la largeur cible (300 * ratio)
+    this.healthBar1.width = Phaser.Math.Linear(
+      this.healthBar1.width,
+      p1LifeRatio * 300,
+      0.1
+    );
+    this.healthBar2.width = Phaser.Math.Linear(
+      this.healthBar2.width,
+      p2LifeRatio * 300,
+      0.1
+    );
+
+    // 3. Changement de couleur dynamique (Vert -> Rouge)
+    // Interpolation entre Vert (0x27f527) et Rouge (0xff0000)
+    const color1 = Phaser.Display.Color.Interpolate.ColorWithColor(
+      Phaser.Display.Color.ValueToColor(0xff0000), // Rouge (0% vie)
+      Phaser.Display.Color.ValueToColor(0x27f527), // Vert (100% vie)
+      1,
+      p1LifeRatio
+    );
+    const color2 = Phaser.Display.Color.Interpolate.ColorWithColor(
+      Phaser.Display.Color.ValueToColor(0xff0000),
+      Phaser.Display.Color.ValueToColor(0x27f527),
+      1,
+      p2LifeRatio
+    );
+
+    // Appliquer les couleurs
+    this.healthBar1.setFillStyle(
+      Phaser.Display.Color.GetColor(color1.r, color1.g, color1.b)
+    );
+    this.healthBar2.setFillStyle(
+      Phaser.Display.Color.GetColor(color2.r, color2.g, color2.b)
+    );
 
     this.healthBar1.width = (this.player1.hp / gameConfig.maxHp) * 300;
     this.healthBar2.width = (this.player2.hp / gameConfig.maxHp) * 300;
@@ -549,5 +637,22 @@ export default class GameScene extends Phaser.Scene {
       this.game.destroy(true);
       window.dispatchEvent(new Event("reset-menu"));
     });
+  }
+
+  // Ajoute ceci après displayFinalVictory(winner) { ... }
+  drawDirectionLine(player) {
+    if (!player) return;
+    const length = 60;
+    const startX = player.x;
+    const startY = player.y;
+    // On vérifie le flipX pour la direction
+    const direction = player.flipX ? -1 : 1;
+
+    this.debugGraphics.lineBetween(
+      startX,
+      startY,
+      startX + length * direction,
+      startY
+    );
   }
 }
