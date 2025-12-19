@@ -237,6 +237,7 @@ export default class GameScene extends Phaser.Scene {
           }
         }
       });
+      this.physics.world.drawDebug = false;
     };
 
     createAnimsFor(p1Skin);
@@ -490,6 +491,48 @@ export default class GameScene extends Phaser.Scene {
 
     this.player1.updateFacing(this.player2);
     this.player2.updateFacing(this.player1);
+
+    // --- Dans ta méthode update() ---
+
+    // 1. Calcul des ratios (0 à 1)
+    const p1LifeRatio = this.player1.hp / gameConfig.maxHp;
+    const p2LifeRatio = this.player2.hp / gameConfig.maxHp;
+
+    // 2. Animation fluide de la largeur (Lerp)
+    // On ajuste doucement la largeur actuelle vers la largeur cible (300 * ratio)
+    this.healthBar1.width = Phaser.Math.Linear(
+      this.healthBar1.width,
+      p1LifeRatio * 300,
+      0.1
+    );
+    this.healthBar2.width = Phaser.Math.Linear(
+      this.healthBar2.width,
+      p2LifeRatio * 300,
+      0.1
+    );
+
+    // 3. Changement de couleur dynamique (Vert -> Rouge)
+    // Interpolation entre Vert (0x27f527) et Rouge (0xff0000)
+    const color1 = Phaser.Display.Color.Interpolate.ColorWithColor(
+      Phaser.Display.Color.ValueToColor(0xff0000), // Rouge (0% vie)
+      Phaser.Display.Color.ValueToColor(0x27f527), // Vert (100% vie)
+      1,
+      p1LifeRatio
+    );
+    const color2 = Phaser.Display.Color.Interpolate.ColorWithColor(
+      Phaser.Display.Color.ValueToColor(0xff0000),
+      Phaser.Display.Color.ValueToColor(0x27f527),
+      1,
+      p2LifeRatio
+    );
+
+    // Appliquer les couleurs
+    this.healthBar1.setFillStyle(
+      Phaser.Display.Color.GetColor(color1.r, color1.g, color1.b)
+    );
+    this.healthBar2.setFillStyle(
+      Phaser.Display.Color.GetColor(color2.r, color2.g, color2.b)
+    );
 
     this.healthBar1.width = (this.player1.hp / gameConfig.maxHp) * 300;
     this.healthBar2.width = (this.player2.hp / gameConfig.maxHp) * 300;
