@@ -29,6 +29,7 @@ export default class GameScene extends Phaser.Scene {
     for (let i = 1; i <= 5; i++) {
       this.load.audio(`round_${i}`, `/audio/round${i}.mp3`);
     }
+    this.load.audio("theme", "/audio/theme.mp3");
 
     // 3. CHARGEMENT DES PERSONNAGES
     const colors = ["red", "emerald", "blue", "yellow", "purple"];
@@ -124,6 +125,11 @@ export default class GameScene extends Phaser.Scene {
     for (let i = 1; i <= 5; i++) {
       this.roundSounds[i] = this.sound.add(`round_${i}`);
     }
+
+    this.battleMusic = this.sound.add("theme", {
+      volume: 0.3,
+      loop: true,
+    });
 
     // DÉCOR
     this.add.image(width / 2, height / 2, "fond").setDisplaySize(width, height);
@@ -459,6 +465,10 @@ export default class GameScene extends Phaser.Scene {
           this.isPaused = false;
           this.time.delayedCall(800, () => introText.destroy());
           this.startTimer();
+
+          if (!this.battleMusic.isPlaying) {
+            this.battleMusic.play();
+          }
         }
       });
     });
@@ -563,6 +573,8 @@ export default class GameScene extends Phaser.Scene {
   checkWinner() {
     if (this.timerEvent) this.timerEvent.remove();
     if (this.gameOver) return;
+
+    this.battleMusic.stop();
 
     if (this.koSound) this.koSound.play();
 
