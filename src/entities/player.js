@@ -106,6 +106,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (pad && pad.R2) {
       dash = true;
       dashIntensity = pad.R2 * 100 * 4;
+    } else if (keys.TAB.isDown) {
+      dash = true;
+      dashIntensity = 400;
     }
 
     const walkSpeed = 300 + dashIntensity;
