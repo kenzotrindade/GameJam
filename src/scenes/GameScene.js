@@ -18,6 +18,10 @@ export default class GameScene extends Phaser.Scene {
     const frameConfig = { frameWidth: 200, frameHeight: 200 };
 
     this.load.audio("ko_sound", "audio/ko.mp3");
+    for (let i = 1; i <= 5; i++) {
+      this.load.audio(`round_${i}`, `audio/round${i}.mp3`);
+    }
+
     // Fonction pour charger un dossier entier d'un coup
     const loadCharacter = (prefix, folderName) => {
       this.load.spritesheet(
@@ -84,6 +88,11 @@ export default class GameScene extends Phaser.Scene {
     const { width, height } = this.scale;
 
     this.koSound = this.sound.add("ko_sound");
+
+    this.roundSounds = {};
+    for (let i = 1; i <= 5; i++) {
+      this.roundSounds[i] = this.sound.add(`round_${i}`);
+    }
 
     // --- 1. DÉCOR ---
     this.add.image(width / 2, height / 2, "fond").setDisplaySize(width, height);
@@ -370,6 +379,12 @@ export default class GameScene extends Phaser.Scene {
     this.isPaused = true;
     this.timeLeft = 99;
     this.timerText.setText("99");
+
+    const currentRoundNumber = this.p1Score + this.p2Score + 1;
+
+    if (this.roundSounds[currentRoundNumber]) {
+      this.roundSounds[currentRoundNumber].play();
+    }
 
     // IMPORTANT: Reset complet des joueurs (Position + Animation + Stats)
     // On utilise la méthode resetPosition qu'on a ajoutée dans Player.js
