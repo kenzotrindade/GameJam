@@ -8,7 +8,6 @@ const statePlayer = Object.freeze({
   block: 3,
   hitstun: 4,
   dead: 5,
-  dash: 6,
 });
 
 const dataAttack = {
@@ -89,6 +88,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
+    var dash = false;
     const threshold = 0.5;
 
     // --- SECURITE KNOCKBACK ---
@@ -102,6 +102,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.state !== statePlayer.attack) {
       this.setVelocityX(0);
     }
+
+    let dashIntensity = 0;
+
+    if (pad && pad.R2) {
+      dash = true;
+      dashIntensity = pad.R2 * 100 * 4;
+    }
+
+    const walkSpeed = 300 + dashIntensity;
+    const walkBackSpeed = 200 + dashIntensity;
 
     // --- ANIMATIONS ---
     if (this.state !== statePlayer.attack) {
@@ -129,64 +139,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.state === statePlayer.attack) return;
 
     if (
-      Phaser.Input.Keyboard.JustDown(keys.lowattack) ||
-      (pad && pad.X && !this.prevPadA)
-    ) {
-      this.executeAttack("low");
-      this.play(this.textureKey + "_attack1", true);
-
-      if (this.scene.katanaSounds) {
-        this.scene.katanaSounds.low.play();
-      }
-      return;
-    } else if (
-      Phaser.Input.Keyboard.JustDown(keys.midattack) ||
-      (pad && pad.A && !this.prevPadX)
-    ) {
-      this.executeAttack("mid");
-      this.play(this.textureKey + "_attack2", true);
-
-      if (this.scene.katanaSounds) {
-        this.scene.katanaSounds.mid.play();
-      }
-      return;
-    } else if (
-      Phaser.Input.Keyboard.JustDown(keys.heavyattack) ||
-      (pad && pad.B && !this.prevPadB)
-    ) {
-      this.executeAttack("heavy");
-      this.play(this.textureKey + "_attack2", true);
-
-      if (this.scene.katanaSounds) {
-        this.scene.katanaSounds.heavy.play();
-      }
-      return;
-    }
-
-    const walkSpeed = 300;
-    const walkBackSpeed = 200;
-
-    if (Phaser.Input.Keyboard.JustDown(keys.dash) && !this.indash) {
-      this.indash = true;
-      let dash = 0;
-      if (
-        keys.left.isDown ||
-        (pad && (pad.left || pad.leftStick.x < -threshold))
-      ) {
-        dash = this.x < opponent.x ? -walkBackSpeed * 3 : -walkSpeed * 3;
-      } else if (
-        keys.right.isDown ||
-        (pad && (pad.right || pad.leftStick.x > threshold))
-      ) {
-        dash = this.x > opponent.x ? walkBackSpeed * 3 : walkSpeed * 3;
-      }
-      if (dash !== 0) {
-        this.setVelocityX(dash);
-        this.scene.time.delayedCall(200, () => {});
-      }
-    }
-
-    if (
       keys.left.isDown ||
       (pad && (pad.left || pad.leftStick.x < -threshold))
     ) {
@@ -212,11 +164,33 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.state = statePlayer.idle;
     }
 
+    if (dash === true) return;
+
     if (
       (keys.up.isDown && isGrounded) ||
       (pad && (pad.up || pad.leftStick.y < -threshold) && isGrounded)
     ) {
       this.setVelocityY(-1500);
+    }
+
+    if (
+      Phaser.Input.Keyboard.JustDown(keys.lowattack) ||
+      (pad && pad.A && !this.prevPadA)
+    ) {
+      this.executeAttack("low");
+      return;
+    } else if (
+      Phaser.Input.Keyboard.JustDown(keys.midattack) ||
+      (pad && pad.X && !this.prevPadX)
+    ) {
+      this.executeAttack("mid");
+      return;
+    } else if (
+      Phaser.Input.Keyboard.JustDown(keys.heavyattack) ||
+      (pad && pad.B && !this.prevPadB)
+    ) {
+      this.executeAttack("heavy");
+      return;
     }
   }
 
@@ -351,7 +325,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.scene.hitParticles) {
       // On fait exploser au niveau du torse visuel
       // Puisque le sprite est grand (scale 3.5), on monte de 100 à 150 pixels depuis les pieds
-      const bloodY = this.y - 350;
+      const bloodY = this.y - 450;
       const bloodX = this.x;
 
       this.scene.hitParticles.explode(20, bloodX, bloodY);

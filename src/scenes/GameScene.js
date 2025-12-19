@@ -248,7 +248,7 @@ export default class GameScene extends Phaser.Scene {
       lowattack: Phaser.Input.Keyboard.KeyCodes.W,
       midattack: Phaser.Input.Keyboard.KeyCodes.X,
       heavyattack: Phaser.Input.Keyboard.KeyCodes.C,
-      dash: Phaser.Input.Keyboard.KeyCodes.ENTER,
+      dash: Phaser.Input.Keyboard.KeyCodes.TAB,
     });
 
     this.keysP2 = this.input.keyboard.addKeys({
