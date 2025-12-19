@@ -75,8 +75,8 @@ export default class GameScene extends Phaser.Scene {
 
     const impactGraphics = this.make.graphics({ x: 0, y: 0, add: false });
     impactGraphics.fillStyle(0xff0000, 1);
-    impactGraphics.fillRect(0, 0, 4, 4);
-    impactGraphics.generateTexture("hit_particle", 4, 4);
+    impactGraphics.fillRect(0, 0, 6, 6);
+    impactGraphics.generateTexture("hit_particle", 6, 6);
   }
 
   create() {
@@ -84,16 +84,16 @@ export default class GameScene extends Phaser.Scene {
 
     // --- 1. DÉCOR ---
     this.add.image(width / 2, height / 2, "fond").setDisplaySize(width, height);
-    // ... tes particules petal et hitParticles (copie-colle ton code existant ici) ...
-    // --- AJOUT DE L'EFFET DE SANG ICI ---
+
     this.hitParticles = this.add.particles(0, 0, "hit_particle", {
-      speed: { min: 50, max: 200 },
-      angle: { min: 0, max: 360 },
+      speed: { min: 150, max: 400 },
       scale: { start: 1.5, end: 0 },
       lifespan: 600,
-      gravityY: 500,
+      gravityY: 1000,
+      alpha: { start: 1, end: 0 },
       emitting: false,
     });
+    this.hitParticles.setDepth(100);
 
     // --- 2. CRÉATION DES ANIMATIONS (AUTO) ---
     // Cette fonction crée toutes les anims pour une couleur donnée (red ou emerald)
