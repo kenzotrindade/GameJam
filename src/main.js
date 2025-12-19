@@ -7,14 +7,12 @@ const config = {
   pixelArt: true,
   backgroundColor: "#000000",
 
-  // --- C'EST ICI QUE ÇA CHANGE ---
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
     width: 1280,
     height: 720,
   },
-  // -------------------------------
 
   physics: {
     default: "arcade",
