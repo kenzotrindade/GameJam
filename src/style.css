@@ -47,6 +47,33 @@ button:hover {
   border-color: #646cff;
 }
 
+.selected {
+  border: 4px solid #f1c40f;
+  transform: scale(1.05);
+  background-color: #444;
+  color: white;
+}
+
+.locked {
+  opacity: 0.2;
+  filter: grayscale(100%);
+  cursor: not-allowed;
+  pointer-events: none;
+  position: relative;
+}
+
+.locked::after {
+  content: "PRIS";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: red;
+  font-weight: bold;
+  font-size: 1.2rem;
+  transform: rotate(-15deg) translate(-50%, -50%);
+}
+
 #app {
   position: absolute;
   top: 0;

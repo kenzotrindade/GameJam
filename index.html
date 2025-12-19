@@ -15,36 +15,36 @@
       <div class="characterSelect">
         <section id="p1Controls">
           <h3>Joueur 1</h3>
-          <article>
+          <article class="Red">
             <h4>Bushido Rouge</h4>
             <img src="/img/samourai.png" alt="Premier Samourai" />
-            <button onclick="selectP1('red')">Rouge</button>
+            <button class="p1-btn" data-char="red">Choisir Rouge</button>
           </article>
-          <article>
+          <article class="Green">
             <h4>Bushido Vert</h4>
             <img src="/img/samourai2.png" alt="Deuxieme Samourai" />
-            <button onclick="selectP1('emerald')">Vert</button>
+            <button class="p1-btn" data-char="emerald">Choisir Vert</button>
           </article>
         </section>
 
         <section id="p2Controls">
           <h3>Joueur 2</h3>
-          <article>
+          <article class="Red">
             <h4>Bushido Rouge</h4>
             <img src="/img/samourai.png" alt="Premier Samourai" />
-            <button onclick="selectP1('red')">Rouge</button>
+            <button class="p2-btn" data-char="red">Choisir Rouge</button>
           </article>
-          <article>
+          <article class="Green">
             <h4>Bushido Vert</h4>
             <img src="/img/samourai2.png" alt="Deuxieme Samourai" />
-            <button onclick="selectP1('emerald')">Vert</button>
+            <button class="p2-btn" data-char="emerald">Choisir Vert</button>
           </article>
         </section>
       </div>
 
-      <button id="startBtn" onclick="startGame()">COMBATTRE !</button>
+      <button id="startBtn">COMBATTRE !</button>
     </div>
 
-    <script type="module" src="/src/main.js"></script>
+    <script type="module" src="/src/menuController.js"></script>
   </body>
 </html>

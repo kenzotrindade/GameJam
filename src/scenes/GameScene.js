@@ -14,60 +14,65 @@ export default class GameScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image("fond", "img/1125239.jpg");
+    // MODIFICATION : Chemin absolu avec "/"
+    this.load.image("fond", "/img/1125239.jpg");
     const frameConfig = { frameWidth: 200, frameHeight: 200 };
 
-    const loadCharacter = (prefix, folderName) => {
-      this.load.spritesheet(
-        `${prefix}_idle`,
-        `img/${folderName}/Idle.png`,
-        frameConfig
-      );
-      this.load.spritesheet(
-        `${prefix}_run`,
-        `img/${folderName}/Run.png`,
-        frameConfig
-      );
-      this.load.spritesheet(
-        `${prefix}_jump`,
-        `img/${folderName}/Jump.png`,
-        frameConfig
-      );
-      this.load.spritesheet(
-        `${prefix}_fall`,
-        `img/${folderName}/Fall.png`,
-        frameConfig
-      );
-      this.load.spritesheet(
-        `${prefix}_attack1`,
-        `img/${folderName}/Attack1.png`,
-        frameConfig
-      );
-      this.load.spritesheet(
-        `${prefix}_attack2`,
-        `img/${folderName}/Attack2.png`,
-        frameConfig
-      );
-      this.load.spritesheet(
-        `${prefix}_hit`,
-        `img/${folderName}/Take Hit.png`,
-        frameConfig
-      ); // Attention espace
-      this.load.spritesheet(
-        `${prefix}_death`,
-        `img/${folderName}/Death.png`,
-        frameConfig
-      );
+    // MODIFICATION : Chargement de toutes les couleurs possibles avec chemins absolus
+    const colors = ["red", "emerald", "blue", "yellow", "purple"];
+    const folders = {
+      red: "RedProtector",
+      emerald: "EmeraldProtector",
+      blue: "BlueProtector",
+      yellow: "YellowProtector",
+      purple: "PurpleProtector",
     };
 
-    loadCharacter("red", "RedProtector");
-    loadCharacter("emerald", "EmeraldProtector");
-
-    loadCharacter("blue", "BlueProtector");
-
-    loadCharacter("yellow", "YellowProtector");
-
-    loadCharacter("purple", "PurpleProtector");
+    colors.forEach((color) => {
+      const folder = folders[color];
+      // On utilise "/img/..." pour éviter les erreurs 404
+      this.load.spritesheet(
+        `${color}_idle`,
+        `/img/${folder}/Idle.png`,
+        frameConfig
+      );
+      this.load.spritesheet(
+        `${color}_run`,
+        `/img/${folder}/Run.png`,
+        frameConfig
+      );
+      this.load.spritesheet(
+        `${color}_jump`,
+        `/img/${folder}/Jump.png`,
+        frameConfig
+      );
+      this.load.spritesheet(
+        `${color}_fall`,
+        `/img/${folder}/Fall.png`,
+        frameConfig
+      );
+      this.load.spritesheet(
+        `${color}_attack1`,
+        `/img/${folder}/Attack1.png`,
+        frameConfig
+      );
+      this.load.spritesheet(
+        `${color}_attack2`,
+        `/img/${folder}/Attack2.png`,
+        frameConfig
+      );
+      // Attention espace : vérifie bien si c'est "Take Hit.png" ou "TakeHit.png" dans tes dossiers
+      this.load.spritesheet(
+        `${color}_hit`,
+        `/img/${folder}/Take Hit.png`,
+        frameConfig
+      );
+      this.load.spritesheet(
+        `${color}_death`,
+        `/img/${folder}/Death.png`,
+        frameConfig
+      );
+    });
 
     // ... tes particules ...
     const graphics = this.make.graphics({ x: 0, y: 0, add: false });
@@ -93,6 +98,11 @@ export default class GameScene extends Phaser.Scene {
       gravityY: 500,
       emitting: false,
     });
+
+    // MODIFICATION : Récupération des choix envoyés par main.js
+    const p1Skin = this.registry.get("p1_skin") || "red";
+    const p2Skin = this.registry.get("p2_skin") || "emerald";
+    console.log(`Combat : ${p1Skin} VS ${p2Skin}`);
 
     const createAnimsFor = (prefix) => {
       this.anims.create({
@@ -169,9 +179,11 @@ export default class GameScene extends Phaser.Scene {
       });
     };
 
-    // On génère les anims pour les deux !
-    createAnimsFor("red");
-    createAnimsFor("emerald");
+    // MODIFICATION : Génération des anims pour les skins choisis
+    createAnimsFor(p1Skin);
+    if (p1Skin !== p2Skin) {
+      createAnimsFor(p2Skin);
+    }
 
     // --- 3. PHYSIQUE ---
     const platforms = this.physics.add.staticGroup();
@@ -185,8 +197,9 @@ export default class GameScene extends Phaser.Scene {
     this.physics.add.existing(ground, true);
     platforms.add(ground);
 
-    this.player1 = new Player(this, 250, height - 100, "red", null);
-    this.player2 = new Player(this, width - 250, height - 100, "emerald", null);
+    // MODIFICATION : Création des joueurs avec les variables p1Skin et p2Skin
+    this.player1 = new Player(this, 250, height - 100, p1Skin, null);
+    this.player2 = new Player(this, width - 250, height - 100, p2Skin, null);
 
     this.physics.add.collider(this.player1, platforms);
     this.physics.add.collider(this.player2, platforms);
@@ -330,9 +343,9 @@ export default class GameScene extends Phaser.Scene {
     this.needsWins = Math.ceil(rounds / 2);
 
     // On nettoie le menu
-    t.destroy();
-    b3.destroy();
-    b5.destroy();
+    if (t.destroy) t.destroy();
+    if (b3.destroy) b3.destroy();
+    if (b5.destroy) b5.destroy();
 
     // On affiche l'interface de combat
     this.healthBar1.setVisible(true);
@@ -507,6 +520,24 @@ export default class GameScene extends Phaser.Scene {
       this.p1Score = 0;
       this.p2Score = 0;
       this.scene.restart();
+    });
+
+    this.add
+      .text(
+        width / 2,
+        height / 2 + 140,
+        "[M] Retour au Menu (Changer persos)",
+        {
+          fontSize: "28px",
+          fill: "#fff",
+        }
+      )
+      .setOrigin(0.5);
+
+    this.input.keyboard.once("keydown-M", () => {
+      this.game.destroy(true);
+
+      window.dispatchEvent(new Event("reset-menu"));
     });
   }
 }
