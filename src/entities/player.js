@@ -15,25 +15,34 @@ const dataAttack = {
   low: {
     damage: 5,
     range: 240,
-    // Temps pendant lequel le joueur est bloqué (Cooldown)
-    duration: 400,
+    duration: 300,
     animSuffix: "_attack1",
+    shake: { intensity: 0.005, duration: 100 },
+    hitStop: 30,
+    bloodCount: 15, // Peu de sang
+    bloodSpeed: 200, // Vitesse modérée
   },
   mid: {
     damage: 10,
     range: 280,
-    duration: 600,
+    duration: 500,
     animSuffix: "_attack2",
+    shake: { intensity: 0.01, duration: 150 },
+    hitStop: 60,
+    bloodCount: 40, // Quantité moyenne
+    bloodSpeed: 400,
   },
   heavy: {
     damage: 15,
     range: 320,
-    // Grosse attaque = Gros temps de blocage (900ms)
-    duration: 900,
+    duration: 800,
     animSuffix: "_attack2",
+    shake: { intensity: 0.02, duration: 250 },
+    hitStop: 120,
+    bloodCount: 120, // "Boucherie" : gicle partout !
+    bloodSpeed: 800, // Vitesse élevée pour l'effet "projection"
   },
 };
-
 export class Player extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y, textureKey, color) {
     super(scene, x, y, textureKey + "_idle");
@@ -169,38 +178,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const config = dataAttack[type];
     this.state = statePlayer.attack;
     this.setVelocityX(0);
-
-    // 1. On lance l'animation
     this.play(this.textureKey + config.animSuffix);
 
-    // --- CORRECTION DU POSITIONNEMENT X ---
-
-    // A. On récupère la demi-largeur de la HITBOX DU CORPS (pas de l'image !)
-    // this.body.width est la largeur réelle physique dans le monde
     const bodyHalfWidth = this.body.width / 2;
-
-    // B. On récupère la demi-largeur de l'ATTAQUE
     const attackHalfWidth = config.range / 2;
-
-    // C. On additionne les deux pour que ça se touche parfaitement
-    // J'ajoute un tout petit overlap négatif (-10) pour être sûr que ça ne laisse pas de trou,
-    // mais tu peux mettre 0 si tu veux que ce soit pixel perfect.
-    const overlap = 0;
-    const offset = bodyHalfWidth + attackHalfWidth - overlap;
-
+    const offset = bodyHalfWidth + attackHalfWidth;
     const hitboxX = this.x + offset * this.direction;
-
-    // --- CORRECTION DU POSITIONNEMENT Y ---
-    // On aligne la hauteur de l'attaque avec le centre du corps physique
-    const hitboxY = this.body.center.y; // Beaucoup plus fiable que this.y - height
+    const hitboxY = this.body.center.y;
 
     const hitbox = this.scene.add.rectangle(
       hitboxX,
       hitboxY,
       config.range,
-      100, // Hauteur du coup
+      100,
       0xffffff,
-      0 // Mets 0.5 ici pour VOIR le rectangle blanc et débugger !
+      0
     );
     this.scene.physics.add.existing(hitbox);
     hitbox.body.setAllowGravity(false);
@@ -208,67 +200,134 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const enemy =
       this === this.scene.player1 ? this.scene.player2 : this.scene.player1;
 
-    if (enemy) {
-      this.scene.physics.overlap(hitbox, enemy, () => {
-        if (
-          enemy.state !== statePlayer.hitstun &&
-          enemy.state !== statePlayer.dead
-        ) {
-          enemy.takeDamage(config.damage, this.x);
-        }
-      });
-    }
+    let hasHit = false;
 
-    // A. Événement VISUEL : Retour à l'Idle
-    this.once("animationcomplete", () => {
-      if (this.state === statePlayer.attack) {
-        this.play(this.textureKey + "_idle", true);
+    this.scene.physics.overlap(hitbox, enemy, () => {
+      if (
+        !hasHit &&
+        enemy.state !== statePlayer.hitstun &&
+        enemy.state !== statePlayer.dead
+      ) {
+        hasHit = true;
+
+        // --- HIT STOP NERVEUX ---
+        const stopDuration = config.hitStop || 50;
+
+        // On fige uniquement les animations et les vitesses
+        const oldVelocitySelf = this.body.velocity.clone();
+        const oldVelocityEnemy = enemy.body.velocity.clone();
+
+        this.anims.pause();
+        enemy.anims.pause();
+        this.body.setAllowGravity(false);
+        enemy.body.setAllowGravity(false);
+        this.setVelocity(0, 0);
+        enemy.setVelocity(0, 0);
+
+        // On utilise le temps réel du navigateur (setTimeout) pour être indépendant de Phaser
+        setTimeout(() => {
+          if (this.active && enemy.active) {
+            this.anims.resume();
+            enemy.anims.resume();
+            this.body.setAllowGravity(true);
+            enemy.body.setAllowGravity(true);
+
+            // On applique les dégâts et le recul APRES la pause pour le feeling
+            enemy.takeDamage(config.damage, this.x, type);
+          }
+        }, stopDuration);
+
+        // --- SHAKE (Lui ne freeze jamais) ---
+        if (config.shake) {
+          this.scene.cameras.main.shake(
+            config.shake.duration,
+            config.shake.intensity
+          );
+        }
       }
     });
 
-    // B. Événement LOGIQUE : Fin du Cooldown
+    // Nettoyage standard
+    this.once("animationcomplete", () => {
+      if (this.state === statePlayer.attack)
+        this.play(this.textureKey + "_idle", true);
+    });
+
     this.scene.time.delayedCall(config.duration, () => {
       if (hitbox.active) hitbox.destroy();
-
       if (
         this.state !== statePlayer.dead &&
         this.state !== statePlayer.hitstun
       ) {
         this.state = statePlayer.idle;
-        this.play(this.textureKey + "_idle", true);
       }
     });
   }
 
-  takeDamage(amount, attackerX) {
+  takeDamage(amount, attackerX, attackType = "low") {
     if (this.state === statePlayer.dead) return;
 
+    const config = dataAttack[attackType];
     const attacker =
       this === this.scene.player1 ? this.scene.player2 : this.scene.player1;
-    let knockbackMultiplier = 1.0;
+
+    // --- FLASH DE DOULEUR (Sur le personnage) ---
+    this.setTint(0xffffff);
+    this.scene.time.delayedCall(100, () => {
+      this.clearTint();
+      if (this.baseColor) this.setTint(this.baseColor);
+    });
 
     // --- LOGIQUE DE BLOCAGE ---
+    let knockbackMultiplier = 1.0;
     if (this.state === statePlayer.block) {
-      amount = Math.floor(amount * 0.2); // Dégâts réduits à 20%
-      knockbackMultiplier = 0.5; // La victime reculera moins (0.5x)
-
-      // L'ATTAQUANT PREND LE RECUL (1.5x)
+      amount = Math.floor(amount * 0.2);
+      knockbackMultiplier = 0.3;
       if (attacker) {
-        const attackerPushDir = this.x < attackerX ? 1 : -1;
-        attacker.setVelocityX(200 * 1.5 * attackerPushDir);
-
-        // Petit flash blanc sur l'attaquant pour le feedback du contre
-        attacker.setTint(0xffffff);
-        this.scene.time.delayedCall(100, () => attacker.clearTint());
+        attacker.setVelocityX(this.x < attackerX ? 400 : -400);
       }
     }
 
     // Application des dégâts
     this.hp -= amount;
 
-    // Particules (position ajustée)
+    // --- FLASH ROUGE (Sur l'écran pour attaque lourde) ---
+    if (attackType === "heavy" && this.state !== statePlayer.block) {
+      // flash(durée, rouge, vert, bleu, intensité)
+      this.scene.cameras.main.flash(100, 255, 255, 255, 0.5);
+    }
+
+    // --- GESTION DU SANG DYNAMIQUE ---
     if (this.scene.hitParticles) {
-      this.scene.hitParticles.explode(15, this.x, this.y - 400);
+      const emitter = this.scene.hitParticles;
+
+      // Si l'adversaire est à gauche de l'attaquant, on projette vers la gauche (-1)
+      // Si l'adversaire est à droite de l'attaquant, on projette vers la droite (1)
+      const dir = this.x < attackerX ? -1 : 1;
+
+      emitter.setSpeed({
+        min: config.bloodSpeed * 0.7,
+        max: config.bloodSpeed,
+      });
+
+      // On calcule l'angle de projection (face à l'impact)
+      // 180° = Gauche, 0° = Droite
+      const baseAngle = dir === -1 ? 180 : 0;
+
+      emitter.setAngle({
+        min: baseAngle - 45,
+        max: baseAngle + 45,
+      });
+
+      // On fait exploser à la position du joueur touché
+      emitter.explode(config.bloodCount, this.x, this.body.center.y);
+
+      if (attackType === "heavy") {
+        // Pour le heavy, on ajoute une explosion circulaire en plus
+        emitter.setAngle({ min: 0, max: 360 });
+        emitter.setSpeed({ min: 100, max: 400 });
+        emitter.explode(config.bloodCount / 2, this.x, this.body.center.y);
+      }
     }
 
     // --- LOGIQUE MORT ---
@@ -280,21 +339,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
-    // --- LOGIQUE HITSTUN (Victime) ---
+    // --- HITSTUN (Recul physique) ---
     this.state = statePlayer.hitstun;
     this.play(this.textureKey + "_hit");
 
+    const kbForce =
+      attackType === "heavy" ? 800 : attackType === "mid" ? 500 : 300;
     const knockbackDir = this.x < attackerX ? -1 : 1;
-    // On applique le multiplier (0.5 si block, 1.0 sinon)
-    this.setVelocityX(200 * knockbackMultiplier * knockbackDir);
-    this.setVelocityY(-200 * knockbackMultiplier);
 
-    this.once("animationcomplete", () => {
+    this.setVelocityX(kbForce * knockbackMultiplier * knockbackDir);
+    this.setVelocityY(-300 * knockbackMultiplier);
+
+    // Sortie de hitstun
+    this.scene.time.delayedCall(config.duration * 0.5, () => {
       if (this.state !== statePlayer.dead) {
         this.state = statePlayer.idle;
-        this.play(this.textureKey + "_idle", true);
-        this.clearTint();
-        if (this.baseColor) this.setTint(this.baseColor);
       }
     });
   }
