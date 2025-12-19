@@ -51,3 +51,4 @@ Todo : refaire complètement le front en Jap (obligatoire)
 Todo : essayer de coder le fait qu'on puisse jouer a la manette (optionnel)
 Todo : mettre des songs (optionnel)
 Todo : des easter egg a street fighter (optionnel)
+Todo : en plus du choix des joueurs il faudrait aussi faire un choix des thèmes arrières

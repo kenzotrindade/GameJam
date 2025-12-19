@@ -15,7 +15,6 @@ const dataAttack = {
   low: {
     damage: 5,
     range: 240,
-    // Temps pendant lequel le joueur est bloqué (Cooldown)
     duration: 400,
     animSuffix: "_attack1",
   },
@@ -28,7 +27,6 @@ const dataAttack = {
   heavy: {
     damage: 15,
     range: 320,
-    // Grosse attaque = Gros temps de blocage (900ms)
     duration: 900,
     animSuffix: "_attack2",
   },
@@ -46,7 +44,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setOrigin(0.5, 1);
     this.setCollideWorldBounds(true);
 
-    // --- SCALE & HITBOX (Sprites 200x200) ---
     this.setScale(3.5);
     this.body.setSize(26, 47);
     this.body.setOffset(87, 75);
@@ -80,14 +77,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
-    // --- SECURITE KNOCKBACK ---
-    // Si on est en hitstun, on ne touche PAS à la vélocité, on laisse la physique faire.
     if (this.state === statePlayer.hitstun) return;
 
     const isGrounded = this.body.touching.down;
 
-    // On ne met à zéro que si on n'est pas en train d'être repoussé par un blocage
-    // ou si on est dans un état contrôlable.
     if (this.state !== statePlayer.attack) {
       this.setVelocityX(0);
     }
@@ -109,7 +102,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
-    // Si on attaque, on ne peut rien faire d'autre (Cooldown)
     if (this.state === statePlayer.attack) return;
 
     if (Phaser.Input.Keyboard.JustDown(keys.lowattack)) {
@@ -170,37 +162,23 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.state = statePlayer.attack;
     this.setVelocityX(0);
 
-    // 1. On lance l'animation
     this.play(this.textureKey + config.animSuffix);
 
-    // --- CORRECTION DU POSITIONNEMENT X ---
-
-    // A. On récupère la demi-largeur de la HITBOX DU CORPS (pas de l'image !)
-    // this.body.width est la largeur réelle physique dans le monde
     const bodyHalfWidth = this.body.width / 2;
-
-    // B. On récupère la demi-largeur de l'ATTAQUE
     const attackHalfWidth = config.range / 2;
-
-    // C. On additionne les deux pour que ça se touche parfaitement
-    // J'ajoute un tout petit overlap négatif (-10) pour être sûr que ça ne laisse pas de trou,
-    // mais tu peux mettre 0 si tu veux que ce soit pixel perfect.
     const overlap = 0;
     const offset = bodyHalfWidth + attackHalfWidth - overlap;
 
     const hitboxX = this.x + offset * this.direction;
-
-    // --- CORRECTION DU POSITIONNEMENT Y ---
-    // On aligne la hauteur de l'attaque avec le centre du corps physique
-    const hitboxY = this.body.center.y; // Beaucoup plus fiable que this.y - height
+    const hitboxY = this.body.center.y;
 
     const hitbox = this.scene.add.rectangle(
       hitboxX,
       hitboxY,
       config.range,
-      100, // Hauteur du coup
+      100,
       0xffffff,
-      0 // Mets 0.5 ici pour VOIR le rectangle blanc et débugger !
+      0
     );
     this.scene.physics.add.existing(hitbox);
     hitbox.body.setAllowGravity(false);
@@ -247,31 +225,24 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this === this.scene.player1 ? this.scene.player2 : this.scene.player1;
     let knockbackMultiplier = 1.0;
 
-    // --- LOGIQUE DE BLOCAGE ---
     if (this.state === statePlayer.block) {
-      amount = Math.floor(amount * 0.2); // Dégâts réduits à 20%
-      knockbackMultiplier = 0.5; // La victime reculera moins (0.5x)
+      amount = Math.floor(amount * 0.2);
+      knockbackMultiplier = 0.5;
 
-      // L'ATTAQUANT PREND LE RECUL (1.5x)
       if (attacker) {
         const attackerPushDir = this.x < attackerX ? 1 : -1;
         attacker.setVelocityX(200 * 1.5 * attackerPushDir);
-
-        // Petit flash blanc sur l'attaquant pour le feedback du contre
         attacker.setTint(0xffffff);
         this.scene.time.delayedCall(100, () => attacker.clearTint());
       }
     }
 
-    // Application des dégâts
     this.hp -= amount;
 
-    // Particules (position ajustée)
     if (this.scene.hitParticles) {
       this.scene.hitParticles.explode(15, this.x, this.y - 100);
     }
 
-    // --- LOGIQUE MORT ---
     if (this.hp <= 0) {
       this.hp = 0;
       this.state = statePlayer.dead;
@@ -280,12 +251,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
-    // --- LOGIQUE HITSTUN (Victime) ---
     this.state = statePlayer.hitstun;
     this.play(this.textureKey + "_hit");
 
     const knockbackDir = this.x < attackerX ? -1 : 1;
-    // On applique le multiplier (0.5 si block, 1.0 sinon)
     this.setVelocityX(200 * knockbackMultiplier * knockbackDir);
     this.setVelocityY(-200 * knockbackMultiplier);
 
