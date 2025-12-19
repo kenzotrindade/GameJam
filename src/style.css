@@ -12,7 +12,7 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-body {
+.bodyGame {
   margin: 0;
   padding: 0;
   display: flex;
@@ -47,6 +47,7 @@ button:hover {
   border-color: #646cff;
 }
 
+<<<<<<< HEAD
 #app {
   position: absolute;
   top: 0;
@@ -72,4 +73,62 @@ button:hover {
 
 .hidden {
   display: none !important;
+=======
+/* Page Accueil */
+
+.body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 100vh;
+  margin: 0;
+  padding: 20px;
+  box-sizing: border-box;
+  background-image: url(https://pbs.twimg.com/media/EVLyO8VVAAIt1ru.jpg);
+  background-size: auto;
+  background-repeat: no-repeat;
+  color: black;
+}
+
+.perso {
+  text-align: center;
+  font-size: 32px;
+  margin-bottom: auto;
+  display: grid;
+  grid-template-columns: repeat(2, 120px);
+  gap: 15px;
+}
+
+.container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+}
+
+.player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 22px;
+  margin-left: 200px;
+  margin-right: 200px;
+}
+
+.choicePerso {
+  margin-bottom: 100px;
+}
+
+.imgPerso {
+  width: 100%;
+  height: 100%;
+}
+
+.endChoices {
+  margin-bottom: 200px;
+  font-weight: bold;
+  text-decoration: none;
+  color: black;
+>>>>>>> 2966b08 (pas fini)
 }
