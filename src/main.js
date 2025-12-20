@@ -15,6 +15,10 @@ export const startGame = (p1Skin, p2Skin) => {
       height: 720,
     },
 
+    input: {
+      gamepad: true,
+    },
+
     physics: {
       default: "arcade",
       arcade: {

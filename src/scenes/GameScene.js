@@ -12,6 +12,8 @@ export default class GameScene extends Phaser.Scene {
     this.gameOver = false;
     this.timerEvent = null;
     this.debugMode = false;
+    this.pad1 = null;
+    this.pad2 = null;
   }
 
   preload() {
@@ -27,6 +29,7 @@ export default class GameScene extends Phaser.Scene {
     for (let i = 1; i <= 5; i++) {
       this.load.audio(`round_${i}`, `audio/round${i}.mp3`);
     }
+    this.load.audio("theme", "/audio/theme.mp3");
 
     // 3. CHARGEMENT DES PERSONNAGES
     const colors = ["red", "emerald", "blue", "yellow", "purple"];
@@ -101,7 +104,17 @@ export default class GameScene extends Phaser.Scene {
   create() {
     const { width, height } = this.scale;
 
-    // SONS
+    this.input.gamepad.once("connected", (pad) => {
+      this.pad1 = pad;
+      console.log("Pad 1 connecté");
+    });
+    this.input.gamepad.on("connected", (pad) => {
+      if (this.pad1 && pad.index !== this.pad1.index) {
+        this.pad2 = pad;
+        console.log("Pad 2 connecté");
+      }
+    });
+
     this.koSound = this.sound.add("ko_sound");
     this.katanaSounds = {
       low: this.sound.add("katana_1"),
@@ -112,6 +125,11 @@ export default class GameScene extends Phaser.Scene {
     for (let i = 1; i <= 5; i++) {
       this.roundSounds[i] = this.sound.add(`round_${i}`);
     }
+
+    this.battleMusic = this.sound.add("theme", {
+      volume: 0.3,
+      loop: true,
+    });
 
     // DÉCOR
     this.add.image(width / 2, height / 2, "fond").setDisplaySize(width, height);
@@ -237,6 +255,7 @@ export default class GameScene extends Phaser.Scene {
           }
         }
       });
+      this.physics.world.drawDebug = false;
     };
 
     createAnimsFor(p1Skin);
@@ -273,7 +292,8 @@ export default class GameScene extends Phaser.Scene {
       lowattack: Phaser.Input.Keyboard.KeyCodes.W,
       midattack: Phaser.Input.Keyboard.KeyCodes.X,
       heavyattack: Phaser.Input.Keyboard.KeyCodes.C,
-      dash: Phaser.Input.Keyboard.KeyCodes.ENTER,
+      specialattack: Phaser.Input.Keyboard.KeyCodes.V,
+      dash: Phaser.Input.Keyboard.KeyCodes.SPACE,
     });
 
     this.keysP2 = this.input.keyboard.addKeys({
@@ -284,7 +304,8 @@ export default class GameScene extends Phaser.Scene {
       lowattack: Phaser.Input.Keyboard.KeyCodes.U,
       midattack: Phaser.Input.Keyboard.KeyCodes.I,
       heavyattack: Phaser.Input.Keyboard.KeyCodes.O,
-      dash: Phaser.Input.Keyboard.KeyCodes.SPACE,
+      specialattack: Phaser.Input.Keyboard.KeyCodes.P,
+      dash: Phaser.Input.Keyboard.KeyCodes.TAB,
     });
 
     this.createHealthBars(width, height);
@@ -446,6 +467,10 @@ export default class GameScene extends Phaser.Scene {
           this.isPaused = false;
           this.time.delayedCall(800, () => introText.destroy());
           this.startTimer();
+
+          if (!this.battleMusic.isPlaying) {
+            this.battleMusic.play();
+          }
         }
       });
     });
@@ -485,11 +510,53 @@ export default class GameScene extends Phaser.Scene {
       this.drawDirectionLine(this.player2);
     }
 
-    this.player1.update(this.keysP1, this.player2);
-    this.player2.update(this.keysP2, this.player1);
+    this.player1.update(this.keysP1, this.player2, this.pad1);
+    this.player2.update(this.keysP2, this.player1, this.pad2);
 
     this.player1.updateFacing(this.player2);
     this.player2.updateFacing(this.player1);
+
+    // --- Dans ta méthode update() ---
+
+    // 1. Calcul des ratios (0 à 1)
+    const p1LifeRatio = this.player1.hp / gameConfig.maxHp;
+    const p2LifeRatio = this.player2.hp / gameConfig.maxHp;
+
+    // 2. Animation fluide de la largeur (Lerp)
+    // On ajuste doucement la largeur actuelle vers la largeur cible (300 * ratio)
+    this.healthBar1.width = Phaser.Math.Linear(
+      this.healthBar1.width,
+      p1LifeRatio * 300,
+      0.1
+    );
+    this.healthBar2.width = Phaser.Math.Linear(
+      this.healthBar2.width,
+      p2LifeRatio * 300,
+      0.1
+    );
+
+    // 3. Changement de couleur dynamique (Vert -> Rouge)
+    // Interpolation entre Vert (0x27f527) et Rouge (0xff0000)
+    const color1 = Phaser.Display.Color.Interpolate.ColorWithColor(
+      Phaser.Display.Color.ValueToColor(0xff0000), // Rouge (0% vie)
+      Phaser.Display.Color.ValueToColor(0x27f527), // Vert (100% vie)
+      1,
+      p1LifeRatio
+    );
+    const color2 = Phaser.Display.Color.Interpolate.ColorWithColor(
+      Phaser.Display.Color.ValueToColor(0xff0000),
+      Phaser.Display.Color.ValueToColor(0x27f527),
+      1,
+      p2LifeRatio
+    );
+
+    // Appliquer les couleurs
+    this.healthBar1.setFillStyle(
+      Phaser.Display.Color.GetColor(color1.r, color1.g, color1.b)
+    );
+    this.healthBar2.setFillStyle(
+      Phaser.Display.Color.GetColor(color2.r, color2.g, color2.b)
+    );
 
     this.healthBar1.width = (this.player1.hp / gameConfig.maxHp) * 300;
     this.healthBar2.width = (this.player2.hp / gameConfig.maxHp) * 300;
@@ -508,6 +575,8 @@ export default class GameScene extends Phaser.Scene {
   checkWinner() {
     if (this.timerEvent) this.timerEvent.remove();
     if (this.gameOver) return;
+
+    this.battleMusic.stop();
 
     if (this.koSound) this.koSound.play();
 
