@@ -16,16 +16,16 @@ export default class GameScene extends Phaser.Scene {
 
   preload() {
     // 1. CHARGEMENT BASIQUE
-    this.load.image("fond", "/img/1125239.jpg");
+    this.load.image("fond", "img/1125239.jpg");
     const frameConfig = { frameWidth: 200, frameHeight: 200 };
 
     // 2. CHARGEMENT AUDIO
-    this.load.audio("ko_sound", "/audio/ko.mp3"); // Ajout du slash / par sécurité
+    this.load.audio("ko_sound", "audio/ko.mp3"); // Ajout du slash / par sécurité
     for (let i = 1; i <= 3; i++) {
-      this.load.audio(`katana_${i}`, `/audio/katana${i}.mp3`);
+      this.load.audio(`katana_${i}`, `audio/katana${i}.mp3`);
     }
     for (let i = 1; i <= 5; i++) {
-      this.load.audio(`round_${i}`, `/audio/round${i}.mp3`);
+      this.load.audio(`round_${i}`, `audio/round${i}.mp3`);
     }
 
     // 3. CHARGEMENT DES PERSONNAGES
@@ -44,44 +44,44 @@ export default class GameScene extends Phaser.Scene {
 
       this.load.spritesheet(
         `${color}_idle`,
-        `/img/${folder}/Idle.png`,
+        `img/${folder}/Idle.png`,
         frameConfig
       );
       this.load.spritesheet(
         `${color}_run`,
-        `/img/${folder}/Run.png`,
+        `img/${folder}/Run.png`,
         frameConfig
       );
       this.load.spritesheet(
         `${color}_jump`,
-        `/img/${folder}/Jump.png`,
+        `img/${folder}/Jump.png`,
         frameConfig
       );
       this.load.spritesheet(
         `${color}_fall`,
-        `/img/${folder}/Fall.png`,
+        `img/${folder}/Fall.png`,
         frameConfig
       );
       this.load.spritesheet(
         `${color}_attack1`,
-        `/img/${folder}/Attack1.png`,
+        `img/${folder}/Attack1.png`,
         frameConfig
       );
       this.load.spritesheet(
         `${color}_attack2`,
-        `/img/${folder}/Attack2.png`,
+        `img/${folder}/Attack2.png`,
         frameConfig
       );
 
       this.load.spritesheet(
         `${color}_hit`,
-        `/img/${folder}/TakeHit.png`,
+        `img/${folder}/TakeHit.png`,
         frameConfig
       );
 
       this.load.spritesheet(
         `${color}_death`,
-        `/img/${folder}/Death.png`,
+        `img/${folder}/Death.png`,
         frameConfig
       );
     });
@@ -584,7 +584,6 @@ export default class GameScene extends Phaser.Scene {
     });
   }
 
-  // Ajoute ceci après displayFinalVictory(winner) { ... }
   drawDirectionLine(player) {
     if (!player) return;
     const length = 60;
