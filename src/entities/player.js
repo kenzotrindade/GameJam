@@ -15,6 +15,7 @@ const dataAttack = {
     damage: 5,
     range: 240,
     duration: 400,
+    hitdelay: 150,
     animSuffix: "_attack1",
     shake: { intensity: 0.002, duration: 100 },
     hitStop: 30,
@@ -25,6 +26,7 @@ const dataAttack = {
     damage: 10,
     range: 280,
     duration: 500,
+    hitdelay: 195,
     animSuffix: "_attack2",
     shake: { intensity: 0.008, duration: 150 },
     hitStop: 60,
@@ -35,6 +37,7 @@ const dataAttack = {
     damage: 15,
     range: 320,
     duration: 900,
+    hitdelay: 240,
     animSuffix: "_attack2",
     shake: { intensity: 0.01, duration: 250 },
     hitStop: 120,
@@ -171,6 +174,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       (pad && (pad.up || pad.leftStick.y < -threshold) && isGrounded)
     ) {
       this.setVelocityY(-1500);
+      this.state = statePlayer.jump;
     }
 
     if (
@@ -191,7 +195,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     ) {
       this.executeAttack("heavy");
       return;
-    }
+    } /*else if (
+      Phaser.Input.Keyboard.JustDown(keys.specialattack) ||
+      (pad && pad.Y && !this.prevPadY)
+    ) {
+      this.executeAttack("special");
+      return;
+    }*/
   }
 
   executeAttack(type) {
@@ -203,68 +213,71 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setVelocityX(0);
     this.play(this.textureKey + config.animSuffix);
 
-    const bodyHalfWidth = this.body.width / 2;
-    const attackHalfWidth = config.range / 2;
-    const overlap = 0;
-    const offset = bodyHalfWidth + attackHalfWidth - overlap;
+    this.scene.time.delayedCall(config.hitdelay || 0, () => {
+      if (this.state !== statePlayer.attack) return;
+      const bodyHalfWidth = this.body.width / 2;
+      const attackHalfWidth = config.range / 2;
+      const overlap = 0;
+      const offset = bodyHalfWidth + attackHalfWidth - overlap;
 
-    const hitboxX = this.x + offset * this.direction;
-    const hitboxY = this.body.center.y;
+      const hitboxX = this.x + offset * this.direction;
+      const hitboxY = this.body.center.y;
 
-    const hitbox = this.scene.add.rectangle(
-      hitboxX,
-      hitboxY,
-      config.range,
-      100,
-      0xffffff,
-      0
-    );
-    this.scene.physics.add.existing(hitbox);
-    hitbox.body.setAllowGravity(false);
+      const hitbox = this.scene.add.rectangle(
+        hitboxX,
+        hitboxY,
+        config.range,
+        100,
+        0xffffff,
+        0
+      );
+      this.scene.physics.add.existing(hitbox);
+      hitbox.body.setAllowGravity(false);
 
-    const enemy =
-      this === this.scene.player1 ? this.scene.player2 : this.scene.player1;
+      const enemy =
+        this === this.scene.player1 ? this.scene.player2 : this.scene.player1;
 
-    let hasHit = false;
+      let hasHit = false;
 
-    this.scene.physics.overlap(hitbox, enemy, () => {
-      if (
-        !hasHit &&
-        enemy.state !== statePlayer.hitstun &&
-        enemy.state !== statePlayer.dead
-      ) {
-        hasHit = true;
+      this.scene.physics.overlap(hitbox, enemy, () => {
+        if (
+          !hasHit &&
+          enemy.state !== statePlayer.hitstun &&
+          enemy.state !== statePlayer.dead
+        ) {
+          hasHit = true;
 
-        const stopDuration = config.hitStop || 50;
+          const stopDuration = config.hitStop || 50;
 
-        const oldVelocitySelf = this.body.velocity.clone();
-        const oldVelocityEnemy = enemy.body.velocity.clone();
+          this.anims.pause();
+          enemy.anims.pause();
+          this.body.setAllowGravity(false);
+          enemy.body.setAllowGravity(false);
+          this.setVelocity(0, 0);
+          enemy.setVelocity(0, 0);
 
-        this.anims.pause();
-        enemy.anims.pause();
-        this.body.setAllowGravity(false);
-        enemy.body.setAllowGravity(false);
-        this.setVelocity(0, 0);
-        enemy.setVelocity(0, 0);
+          this.scene.time.delayedCall(stopDuration, () => {
+            if (this.active && enemy.active) {
+              this.anims.resume();
+              enemy.anims.resume();
+              this.body.setAllowGravity(true);
+              enemy.body.setAllowGravity(true);
 
-        setTimeout(() => {
-          if (this.active && enemy.active) {
-            this.anims.resume();
-            enemy.anims.resume();
-            this.body.setAllowGravity(true);
-            enemy.body.setAllowGravity(true);
+              enemy.takeDamage(config.damage, this.x, type);
+            }
+          });
 
-            enemy.takeDamage(config.damage, this.x, type);
+          if (config.shake) {
+            this.scene.cameras.main.shake(
+              config.shake.duration,
+              config.shake.intensity
+            );
           }
-        }, stopDuration);
-
-        if (config.shake) {
-          this.scene.cameras.main.shake(
-            config.shake.duration,
-            config.shake.intensity
-          );
         }
-      }
+      });
+      this.scene.time.delayedCall(dataAttack[type].duration, () => {
+        if (hitbox.active) hitbox.destroy();
+      });
     });
 
     this.once("animationcomplete", () => {
@@ -273,7 +286,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     });
 
     this.scene.time.delayedCall(config.duration, () => {
-      if (hitbox.active) hitbox.destroy();
       if (
         this.state !== statePlayer.dead &&
         this.state !== statePlayer.hitstun

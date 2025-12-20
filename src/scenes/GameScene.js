@@ -292,6 +292,7 @@ export default class GameScene extends Phaser.Scene {
       lowattack: Phaser.Input.Keyboard.KeyCodes.W,
       midattack: Phaser.Input.Keyboard.KeyCodes.X,
       heavyattack: Phaser.Input.Keyboard.KeyCodes.C,
+      specialattack: Phaser.Input.Keyboard.KeyCodes.V,
       dash: Phaser.Input.Keyboard.KeyCodes.SPACE,
     });
 
@@ -303,6 +304,7 @@ export default class GameScene extends Phaser.Scene {
       lowattack: Phaser.Input.Keyboard.KeyCodes.U,
       midattack: Phaser.Input.Keyboard.KeyCodes.I,
       heavyattack: Phaser.Input.Keyboard.KeyCodes.O,
+      specialattack: Phaser.Input.Keyboard.KeyCodes.P,
       dash: Phaser.Input.Keyboard.KeyCodes.TAB,
     });
 
