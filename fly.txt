@@ -1,0 +1,3 @@
+if (keys.up.isDown && this.body.touching.down && !this.state.fly) {
+    this.setVelocityY(-550);
+}

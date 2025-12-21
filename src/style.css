@@ -1,0 +1,120 @@
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #000000;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  font-family: "Press Start 2P", system-ui;
+  font-weight: 400;
+  letter-spacing: -2px;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  max-width: none;
+  text-align: center;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+button:hover {
+  border-color: #646cff;
+}
+
+.selected {
+  border: 4px solid #f1c40f;
+  transform: scale(1.05);
+  background-color: #444;
+  color: white;
+}
+
+.locked {
+  opacity: 0.2;
+  filter: grayscale(100%);
+  cursor: not-allowed;
+  pointer-events: none;
+  position: relative;
+}
+
+.locked::after {
+  content: "PRIS";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: red;
+  font-weight: bold;
+  font-size: 1.2rem;
+  transform: rotate(-15deg) translate(-50%, -50%);
+}
+h1 {
+  font-size: 50px;
+  color: black;
+  -webkit-text-stroke: 2px orange;
+}
+
+#app {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+#htmlMenuOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 10;
+
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: white;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.characterSelect {
+  display: flex;
+}
+
+#p1Controls {
+  margin-right: 120px;
+}
+
+#p2Controls {
+  margin-left: 200px;
+}
